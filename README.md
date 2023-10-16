@@ -1,6 +1,7 @@
 # pyaa
 Resources for my Asset Allocation course.
 
+
 ---
 # Data Sources
 Most of the data used in this repository comes from proprietary 

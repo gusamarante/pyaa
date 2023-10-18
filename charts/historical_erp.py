@@ -16,6 +16,8 @@ from bwbbgdl import GoGet
 from bwmktdata import Macrobond
 from bwsecrets.api import get_secret
 
+from utils import Performance
+
 size = 5
 
 # ===== Read the Data =====
@@ -50,7 +52,7 @@ ffrtr = (1+ffr).cumprod()
 
 spx = df['S&P500'].dropna().copy()
 ret_spx = spx.pct_change(1)
-xret_spx = (ret_spx - ffr).dropna()
+xret_spx = ((1 + ret_spx) / (1 + ffr) - 1).dropna()
 eri_spx = (1 + xret_spx).cumprod()
 
 # TODO add cpi
@@ -65,7 +67,7 @@ ecbtr = (1+ecb_rate).cumprod()
 
 sxxp = df['EuroStoxx 600'].dropna().copy()
 ret_sxxp = sxxp.pct_change(1)
-xret_sxxp = (ret_sxxp - ecb_rate).dropna()
+xret_sxxp = ((1 + ret_sxxp) / (1 + ecb_rate) - 1).dropna()
 eri_sxxp = (1 + xret_sxxp).cumprod()
 
 # TODO add cpi
@@ -80,7 +82,7 @@ jpntr = (1 + jpn_rate).cumprod()
 
 topix = df['Topix'].dropna().copy()
 ret_topix = topix.pct_change(1)
-xret_topix = (ret_topix - jpn_rate).dropna()
+xret_topix = ((1 + ret_topix) / (1 + jpn_rate) - 1).dropna()
 eri_topix = (1 + xret_topix).cumprod()
 
 # TODO add cpi
@@ -95,7 +97,7 @@ cditr = (1 + cdi_rate).cumprod()
 
 ibov = df['Ibovespa'].dropna().copy()
 ret_ibov = ibov.pct_change(1)
-xret_ibov = (ret_ibov - cdi_rate).dropna()
+xret_ibov = ((1 + ret_ibov) / (1 + cdi_rate) - 1).dropna()
 xret_ibov = xret_ibov[xret_ibov.index >= "1995-01-01"]
 eri_ibov = (1 + xret_ibov).cumprod()
 
@@ -108,13 +110,24 @@ br_all = br_all / br_all.iloc[0]
 
 # All ERI
 all_eri = pd.concat([
+    eri_spx.rename("S&P 500"),
+    eri_sxxp.rename("EuroStoxx 600"),
+    eri_topix.rename("Topix"),
+    eri_ibov.rename("Ibovespa"),
+        ], axis=1)
+
+# Performance
+# perf = Performance(all_eri)
+
+# All cumulative ERI
+cumulative_eri = pd.concat([
     eri_spx.reset_index(drop=True).rename("S&P 500"),
     eri_sxxp.reset_index(drop=True).rename("EuroStoxx 600"),
     eri_topix.reset_index(drop=True).rename("Topix"),
     eri_ibov.reset_index(drop=True).rename("Ibovespa"),
         ], axis=1)
-all_eri.index = all_eri.index / 252
-all_eri = all_eri / all_eri.iloc[0]
+cumulative_eri.index = cumulative_eri.index / 252
+cumulative_eri = cumulative_eri / cumulative_eri.iloc[0]
 
 # ==============================================
 # ===== Chart - Separate Countries US / EU =====
@@ -215,10 +228,10 @@ fig = plt.figure(figsize=(size * (16 / 7.3), size))
 # )
 ax = plt.subplot2grid((1, 1), (0, 0))
 ax.set_title("Excess Return Index")
-ax.plot(all_eri['S&P 500'], label="S&P 500", color="#3333B2")
-ax.plot(all_eri['EuroStoxx 600'], label="EuroStoxx 600", color="#0B6E4F")
-ax.plot(all_eri['Topix'], label="Topix", color="#FFBA08")
-ax.plot(all_eri['Ibovespa'], label="Ibovespa", color="#F25F5C")
+ax.plot(cumulative_eri['S&P 500'], label="S&P 500", color="#3333B2")
+ax.plot(cumulative_eri['EuroStoxx 600'], label="EuroStoxx 600", color="#0B6E4F")
+ax.plot(cumulative_eri['Topix'], label="Topix", color="#FFBA08")
+ax.plot(cumulative_eri['Ibovespa'], label="Ibovespa", color="#F25F5C")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5, which="both")
 ax.set_yscale('log')

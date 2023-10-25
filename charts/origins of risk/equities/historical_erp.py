@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.ticker import ScalarFormatter
 
-from bwbbgdl import GoGet
 from bwmktdata import Macrobond
 from bwsecrets.api import get_secret
 

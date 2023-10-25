@@ -21,7 +21,6 @@ from utils import Performance
 size = 5
 
 # ===== Read the Data =====
-# BBG
 file_path = r"C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Dados BBG AA Course.xlsx"
 df = pd.read_excel(file_path, sheet_name='TOT_RETURN_INDEX_GROSS_DVDS', skiprows=4, index_col=0)
 df = df.sort_index()
@@ -119,9 +118,9 @@ all_eri = pd.concat([
         ], axis=1)
 
 # Performance
-perf = Performance(all_eri)
-perf.table.to_clipboard()
-print("COPIED")
+# perf = Performance(all_eri)
+# perf.table.to_clipboard()
+# print("COPIED")
 
 # All cumulative ERI
 cumulative_eri = pd.concat([

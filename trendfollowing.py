@@ -1,17 +1,19 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import Performance
 
-df = pd.read_excel(io=r"C:\Users\gamarante\Downloads\Book1.xlsx",
+df = pd.read_excel(io=r"/Users/gamarante/Downloads/Book1.xlsx",
                    index_col=0)
 
-df = df['IVVB11 BZ Equity'].dropna()
+name = 'SMAL11 BZ Equity'
+df = df[name].dropna()
 ret = df.pct_change(1)
 
 k_fast = 21 * 6
 k_slow = 21 * 12
-df_fast = ret.rolling(k_fast).mean().shift(1)  # 1-day lag
-df_slow = ret.rolling(k_slow).mean().shift(1)
+df_fast = ret.rolling(k_fast).mean().shift(1)  # 1-day lag on the signal
+df_slow = ret.rolling(k_slow).mean().shift(1)  # 1-day lag on the signal
 
 is_bull = (df_fast >= 0) & (df_slow >= 0)
 is_bear = (df_fast < 0) & (df_slow < 0)
@@ -28,11 +30,11 @@ mean_bear = ret[is_bear].expanding().mean().reindex(ret.index).fillna(method='ff
 mean_corr = ret[is_corr].expanding().mean().reindex(ret.index).fillna(method='ffill')
 mean_rebo = ret[is_rebo].expanding().mean().reindex(ret.index).fillna(method='ffill')
 
-std_bull = ret[is_bull].expanding().std().reindex(ret.index).fillna(method='ffill')
-std_bear = ret[is_bear].expanding().std().reindex(ret.index).fillna(method='ffill')
-std_corr = ret[is_corr].expanding().std().reindex(ret.index).fillna(method='ffill')
-std_rebo = ret[is_rebo].expanding().std().reindex(ret.index).fillna(method='ffill')
-std_bube = ret[is_bull | is_bear].expanding().std().reindex(ret.index).fillna(method='ffill')
+std_bull = ret[is_bull].expanding().var().reindex(ret.index).fillna(method='ffill')
+std_bear = ret[is_bear].expanding().var().reindex(ret.index).fillna(method='ffill')
+std_corr = ret[is_corr].expanding().var().reindex(ret.index).fillna(method='ffill')
+std_rebo = ret[is_rebo].expanding().var().reindex(ret.index).fillna(method='ffill')
+std_bube = ret[is_bull | is_bear].expanding().var().reindex(ret.index).fillna(method='ffill')
 
 sharpe_bull = ((1 + mean_bull)**252 - 1) / (std_bull * np.sqrt(252))
 sharpe_bear = ((1 + mean_bear)**252 - 1) / (std_bear * np.sqrt(252))
@@ -58,13 +60,19 @@ ret_dyn = is_bull * ret + is_bear * (-ret) + is_corr * ((1 - aco) * ret_slow + a
 ret_dyn = ret_dyn.fillna(0)
 dyn = (1 + ret_dyn).cumprod()
 
-df = pd.concat([df, dyn.rename('DynTrend')], axis=1)
+ret_fast = ret_fast.fillna(0)
+fast = (1 + ret_fast).cumprod()
+
+ret_slow = ret_slow.fillna(0)
+slow = (1 + ret_slow).cumprod()
+
+df = pd.concat([df, fast.rename("Fast"), slow.rename("Slow"), dyn.rename('DynTrend')], axis=1)
 df = df[df.index >= '2017-01-01']
 df = 100 * df / df.iloc[0]
 
 df.plot()
 plt.show()
 
-ratio = df['DynTrend'] / df['IVVB11 BZ Equity']
+ratio = df['DynTrend'] / df[name]
 ratio.plot()
 plt.show()

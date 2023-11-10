@@ -11,7 +11,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-size = 7
+size = 5
 
 filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx'
 df = pd.read_excel(filepath, index_col=0)

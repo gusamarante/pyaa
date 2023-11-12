@@ -54,13 +54,15 @@ ax.legend(frameon=True, loc="best")
 
 ax = plt.subplot2grid((1, 2), (0, 1))
 ax.set_title("NTN-B Excess Returns and Vol")
-ax.plot(perf.std.values * 100, perf.returns_ann.values * 100, label="1y", color="#3333B2", lw=2)
+ax.plot(perf.std.values * 100, perf.returns_ann.values * 100, color="#3333B2", lw=2)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.set_xlabel("Annualized Volatility")
 ax.set_ylabel("Annualized Return")
 
-ax.legend(frameon=True, loc="best")
+labels = perf.std.index.str[5:]
+for x, y, lb in zip(perf.std.values * 100, perf.returns_ann.values * 100, labels):
+    ax.annotate(lb, (x + 0.1, y))
 
 
 plt.tight_layout()

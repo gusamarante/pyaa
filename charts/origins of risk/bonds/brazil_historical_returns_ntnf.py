@@ -61,6 +61,10 @@ ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.set_xlabel("Annualized Volatility")
 ax.set_ylabel("Annualized Return")
 
+labels = perf.std.index.str[5:]
+for x, y, lb in zip(perf.std.values * 100, perf.returns_ann.values * 100, labels):
+    ax.annotate(lb, (x + 0.1, y))
+
 
 plt.tight_layout()
 

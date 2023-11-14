@@ -9,16 +9,10 @@ F25F5C - Red
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-import pandas as pd
 from matplotlib.ticker import ScalarFormatter
-import statsmodels.api as sm
-import numpy as np
 
-from bwbbgdl import GoGet
 from bwmktdata import Macrobond
 from bwsecrets.api import get_secret
-
-from utils import Performance
 
 size = 5
 

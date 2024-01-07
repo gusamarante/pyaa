@@ -26,7 +26,6 @@ rate = pd.read_excel('/Users/gustavoamarante/PycharmProjects/pyaa/trackers/outpu
 pu = 100_000 / ((1+rate)**(rate.columns / 252))
 dv01 = (((- rate.columns / 252) * pu) / (1 + rate)) / 10_000
 
-# Compute PCA
 
 # ===========================
 # ===== Full sample PCA =====

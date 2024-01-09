@@ -15,7 +15,7 @@ import pandas as pd
 # User defined parameters
 pd.set_option('display.max_columns', 25)
 pd.set_option('display.width', 250)
-start_date = '2023-11-01'
+start_date = '2023-12-01'
 
 # Path to save outputs
 username = getpass.getuser()
@@ -52,6 +52,7 @@ df_dv01 = df_dv01 * 10_000  # PCA-DV01 requires move per unit of PC, so the DV01
 # ================================
 df_pca = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'])
 df_loadings = pd.DataFrame(columns=['date', 'du', 'PC 1', 'PC 2', 'PC 3', 'PC 4'])
+df_var = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'])
 dates2loop = df_curve.index[df_curve.index >= start_date]
 
 for date in tqdm(dates2loop, 'Generating Signal'):
@@ -77,11 +78,16 @@ for date in tqdm(dates2loop, 'Generating Signal'):
     current_loadings['date'] = date
     df_loadings = pd.concat([df_loadings, current_loadings])
 
+    df_var.loc[date] = pca.explained_variance_
+
+
 df_loadings['date'] = pd.to_datetime(df_loadings['date'])
+df_std = df_var ** 0.5
 
 
-
-# ===== Custom Function =====
+# =======================================
+# ===== Portfolio Building Function =====
+# =======================================
 def get_portfolio(current_date, pcadv01):
     """
     given a date and the desired exposition vector, returns the chosen contracts
@@ -108,19 +114,30 @@ def get_portfolio(current_date, pcadv01):
     cond_du = df_raw['du'].isin(vertices_du)
     current_data = df_raw[cond_date & cond_du].sort_values('du')
 
-    # TODO parei aqui
     selected_portfolio['contracts'] = current_data['contract'].values
     selected_portfolio['pu'] = current_data['theoretical_price'].values
     selected_portfolio[['Loadings 1', 'Loadings 2', 'Loadings 3', 'Loadings 4']] = current_loadings.loc[vertices_du]
-    # selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3']] = aux_pcadv01.loc[vertices_du]
-    # selected_portfolio[['PC 1', 'PC 2', 'PC 3']] = current_pca.values
-    #
-    # coeff = selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3']].T.values
-    # constants = np.array(pcadv01)
-    # selected_portfolio['quantities'] = np.linalg.inv(coeff) @ constants
+    selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3', 'PCADV01 4']] = aux_pcadv01.loc[vertices_du]
+    selected_portfolio[['PC 1', 'PC 2', 'PC 3', 'PC 4']] = current_pca.values
 
-    # return selected_portfolio
-    return 2
+    coeff = selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3', 'PCADV01 4']].T.values
+    constants = np.array(pcadv01)
+    selected_portfolio['quantities'] = np.linalg.inv(coeff) @ constants
+
+    return selected_portfolio
 
 
-get_portfolio(start_date, 2)
+# =================================
+# ===== Backtest the Strategy =====
+# =================================
+dates2loop = df_curve.index[df_curve.index >= start_date]
+backtest = pd.DataFrame()  # To save everything from the backtest
+
+for d in tqdm(dates2loop, "Backtesting"):
+
+    # TODO comprar quando estiver abaixo/acima de 1.5 desvios.
+    #  Vender quando voltar para mais/menos que 0.5 desvios
+    cond_above = df_pca.loc[d] > df_std.loc[d]
+    cond_below = df_pca.loc[d] < df_std.loc[d]
+    cond_middle = (~cond_above) & (~cond_below)
+

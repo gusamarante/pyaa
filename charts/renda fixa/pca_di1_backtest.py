@@ -16,6 +16,8 @@ import pandas as pd
 pd.set_option('display.max_columns', 25)
 pd.set_option('display.width', 250)
 start_date = '2023-12-01'
+sd_enter = 1.5
+sd_leave = 0.5
 
 # Path to save outputs
 username = getpass.getuser()
@@ -133,11 +135,19 @@ def get_portfolio(current_date, pcadv01):
 dates2loop = df_curve.index[df_curve.index >= start_date]
 backtest = pd.DataFrame()  # To save everything from the backtest
 
-for d in tqdm(dates2loop, "Backtesting"):
+position = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'])
+position.loc[dates2loop[0]] = [0, 0, 0, 0]
+
+dates2loop = zip(dates2loop[1:], dates2loop[:-1])
+for d, dm1 in tqdm(dates2loop, "Backtesting"):
 
     # TODO comprar quando estiver abaixo/acima de 1.5 desvios.
     #  Vender quando voltar para mais/menos que 0.5 desvios
-    cond_above = df_pca.loc[d] > df_std.loc[d]
-    cond_below = df_pca.loc[d] < df_std.loc[d]
+    cond_above = df_pca.loc[d] > sd_enter * df_std.loc[d]
+    cond_below = df_pca.loc[d] < - sd_enter * df_std.loc[d]
     cond_middle = (~cond_above) & (~cond_below)
 
+    cond_long = position.loc[dm1] == 1
+    cond_short = position.loc[dm1] == -1
+    cond_neutral = position.loc[dm1] == 0
+    position = cond_above * (-1) + cond_below * 1 + cond_middle

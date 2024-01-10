@@ -151,3 +151,17 @@ for d, dm1 in tqdm(dates2loop, "Backtesting"):
     cond_short = position.loc[dm1] == -1
     cond_neutral = position.loc[dm1] == 0
     position = cond_above * (-1) + cond_below * 1 + cond_middle
+
+
+"""
+MySQL
+- geração de sinais
+    - guardar todos os PCs calculados dia a dia
+    - guardar todos os loadings calculados dia a dia
+- Geração de posições
+    - comprado ou vendido
+    - em qual contrato
+- geração de PnL
+    - Baseados nos contratods segurados, montar o total return 
+
+"""

@@ -1,6 +1,6 @@
 """
-generates the charts for the PCA analysis for yield curves based on the DI
-futures curve. The generated slides are used in the slide deck
+generates the charts for the static PCA analysis for yield curves based on
+the DI futures curve.
 """
 
 import numpy as np

@@ -1,5 +1,5 @@
 """
-Calculate the rolling PCA signals and loadings
+Calculate the rolling PCA signals, loadings and variance
 """
 
 from sklearn.decomposition import PCA
@@ -14,6 +14,7 @@ import getpass
 username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024')
 window = 5  # in years
+start_date = "2023-10-01"
 
 # Create Connection to DB
 db_file = save_path.joinpath(r"di1pca.db")
@@ -50,7 +51,7 @@ df_dv01 = df_dv01 * 10_000  # PCA-DV01 requires move per unit of PC, so the DV01
 df_pca = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'])
 df_loadings = pd.DataFrame(columns=['reference_date', 'du', 'PC 1', 'PC 2', 'PC 3', 'PC 4'])
 df_var = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'])
-dates2loop = df_curve.index
+dates2loop = df_curve.index[df_curve.index >= start_date]
 
 for d in tqdm(dates2loop):
 
@@ -83,7 +84,7 @@ for d in tqdm(dates2loop):
     df_var.loc[d] = pca.explained_variance_
 
 # Organize DFs to upload
-df_loadings = df_loadings.melt(id_vars=['date', 'du'], var_name='pc', value_name='loading')
+df_loadings = df_loadings.melt(id_vars=['reference_date', 'du'], var_name='pc', value_name='loading')
 df_loadings['window_type'] = f'rolling {window}y'
 
 df_pca.index.name = 'reference_date'
@@ -97,34 +98,10 @@ df_var = df_var.melt(id_vars='reference_date', var_name='pc', value_name='pc_var
 df_var['window_type'] = f'rolling {window}y'
 
 
-# Create Connection to DB
+# Create Connection to DB and upload data
 db_file = save_path.joinpath(r"di1pca.db")
 with sqlite3.connect(db_file) as conn:
 
-    # Create PCA table
-    create_table = """
-    CREATE TABLE di1_pca (
-                         reference_date    date not null,
-                         du                integer not null,
-                         rate              real not null,
-                         theoretical_price real not null,
-                         pnl               real not null,
-                         dv01              real not null,
-                         contract          text not null,
-                         du                integer not null,
-                         volume            integer not null,
-                         open_interest     integer not null,
-
-    CONSTRAINT pk_di1_raw PRIMARY KEY (reference_date, contract)
-    );
-    """
-    conn.cursor().execute(create_table)
-
-    # Upload data
-    df_raw.to_sql(name='di1_raw', con=conn, if_exists='append', index=False)
-
-
-
-
-
-
+    df_pca.to_sql(name='di1_pca', con=conn, if_exists='append', index=False)
+    df_loadings.to_sql(name='di1_loadings', con=conn, if_exists='append', index=False)
+    df_var.to_sql(name='di1_variance', con=conn, if_exists='append', index=False)

@@ -32,7 +32,7 @@ df_raw['maturity_date'] = pd.to_datetime(df_raw['maturity_date'])
 db_file = save_path.joinpath(r"di1pca.db")
 with sqlite3.connect(db_file) as conn:
 
-    # Create the table
+    # Create the table for raw data
     create_table = """
     CREATE TABLE di1_raw (
                          reference_date    date not null,
@@ -50,6 +50,25 @@ with sqlite3.connect(db_file) as conn:
     );
     """
     conn.cursor().execute(create_table)
-
-    # Upload data
+    # Upload raw data
     df_raw.to_sql(name='di1_raw', con=conn, if_exists='append', index=False)
+
+
+    # Create table for PCs
+    create_table = """
+        CREATE TABLE di1_pca (
+                             reference_date    date not null,
+                             pc                text not null,
+                             pc_value          real not null,
+                             window_type       text not null,
+
+        CONSTRAINT pk_di1_pca PRIMARY KEY (reference_date, pc, window_type)
+        );
+        """
+    conn.cursor().execute(create_table)
+
+    # TODO create tables for the loadings and the variance
+
+
+
+

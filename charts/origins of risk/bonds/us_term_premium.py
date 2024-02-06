@@ -34,7 +34,7 @@ df_mb = mb.fetch_series(mb_tickers)
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
 ax = plt.subplot2grid((1, 1), (0, 0))
-ax.set_title("Term Premium Models for United States")
+ax.set_title("10y Term Premium Models for United States")
 ax.plot(df_mb['KW'].dropna(), label="KW (2005)", color="#F25F5C")
 ax.plot(df_mb['ACM'].dropna(), label="ACM (2013)", color="#3333B2")
 ax.axhline(0, color='black', lw=0.5)

@@ -21,7 +21,6 @@ fred = FRED()
 ffer = fred.fetch(series_id={'DFF': 'FFER'})
 ffer = (1 + ffer['FFER']/100)**(1/252) - 1
 
-# filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx'  # mac
 filepath = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Dados BBG AA Course.xlsx"  # work
 df = pd.read_excel(filepath, index_col=0, skiprows=4, sheet_name="UST Total Return")
 df = df.drop('Dates', axis=0)

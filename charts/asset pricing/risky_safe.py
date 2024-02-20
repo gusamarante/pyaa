@@ -61,7 +61,11 @@ print(corr)
 # Min Variance Parameters
 mu = perf_tri.returns_ann
 cov = eri.resample('M').last().pct_change(1).cov() * 12
-rf = (1 + cdi.iloc[-1])**252 - 1
+rf = (1 + cdi.iloc[-1]) ** 252 - 1
 
 mv = MeanVar(mu, cov, rf=rf, risk_aversion=100)
+
+print('Max Sharpe', mv.risky_weights)
+print('Min Var', mv.mv_weights)
+
 mv.plot(mvfnoss=False)

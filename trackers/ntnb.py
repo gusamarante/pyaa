@@ -6,7 +6,7 @@ import pandas as pd
 # User defined parameters
 desired_duration = [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]  # in years
 rebalance_window = 3  # in months
-last_year = 2023
+last_year = 2024
 notional_start = 100
 start_date = '2006-01-01'
 
@@ -26,7 +26,7 @@ ntnb['maturity'] = pd.to_datetime(ntnb['maturity'])
 # Set up
 dates2loop = pd.to_datetime(ntnb['reference date'].unique())
 dates2loop = dates2loop[dates2loop >= start_date]
-df_tracker = pd.DataFrame()  # To save all of the final trackers
+df_tracker = pd.DataFrame()  # To save all the final trackers
 
 # ===== Fixed Duration =====
 for dd in desired_duration:

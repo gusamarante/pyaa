@@ -16,6 +16,7 @@ class MeanVar:
         """
         # TODO Documentation
         # TODO Investor's portfolio depends on the risk aversion and borrowing
+        # TODO Composition chart for the complete portfolio and for risky
 
         # Assertions
         self._assert_indexes(mu, cov)

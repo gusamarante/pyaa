@@ -10,26 +10,34 @@ import numpy as np
 
 class MeanVar:
 
-    def __init__(self, mu, cov, rf=0, short_sell=True, risk_aversion=None):
+    def __init__(self, mu, cov, rf=0, rb=None, short_sell=True, risk_aversion=None):
         """
         Deals with all aspects of mean-variance optimization
         """
         # TODO Documentation
+        # TODO Investor's portfolio depends on the risk aversion and borrowing
 
-        # Asseert data indexes and organize
+        # Assertions
         self._assert_indexes(mu, cov)
+        assert rb > rf, "'rb' must be larger than 'rf'"
+
 
         # Save attributes
         self.mu = mu
         self.cov = cov
         self.sigma = pd.Series(data=np.sqrt(np.diag(cov)), index=mu.index)
         self.rf = rf
+        self.rb = rb
         self.short_sell = short_sell
         self.n_assets = self._n_assets()
         self.risk_aversion = risk_aversion
 
         # Optimal risky porfolio (max sharpe / tangency)
-        self.mu_p, self.sigma_p, self.risky_weights, self.sharpe_p = self._get_optimal_risky_portfolio()
+        self.mu_p, self.sigma_p, self.risky_weights, self.sharpe_p = self._get_optimal_risky_portfolio(self.rf)
+
+        # Optimal risky porfolio for borrowers (max sharpe / tangency)
+        if self.rb is not None:
+            self.mu_b, self.sigma_b, self.risky_weights_b, self.sharpe_b = self._get_optimal_risky_portfolio(self.rb)
 
         # Global minimum variance portfolio
         self.mu_mv, self.sigma_mv, self.mv_weights, self.sharpe_mv = self._get_minimal_variance_portfolio()
@@ -53,11 +61,7 @@ class MeanVar:
              ):
 
         fig = plt.figure(figsize=figsize)
-        fig.suptitle(
-            title,
-            fontsize=16,
-            fontweight="bold"
-        )
+        fig.suptitle(title, fontsize=16, fontweight="bold")
         ax = plt.subplot2grid((1, 1), (0, 0))
 
         # Elements
@@ -82,16 +86,33 @@ class MeanVar:
             ax.plot(sigma_mv, mu_mv, marker=None, zorder=-1, label='Minimum Variance Frontier (No Short Selling)')
 
         if cal:
-            max_sigma = self.sigma.max() + 0.05
-            x_values = [0, max_sigma]
-            y_values = [self.rf, self.rf + self.sharpe_p * max_sigma]
-            plt.plot(x_values, y_values, marker=None, zorder=-1, label='Capital Allocation Line')
+            if self.rb is None:
+                max_sigma = self.sigma.max() + 0.05
+                x_values = [0, max_sigma]
+                y_values = [self.rf, self.rf + self.sharpe_p * max_sigma]
+                plt.plot(x_values, y_values, marker=None, zorder=-1, label='Capital Allocation Line')
+            else:
+                # If borrowing costs more
+                x_cal = [0, self.sigma_p]
+                y_cal = [self.rf, self.rf + self.sharpe_p * self.sigma_p]
+                plt.plot(x_cal, y_cal, marker=None, zorder=-1, label='Capital Allocation Line (No Borrowing)')
+
+                ax.scatter(self.sigma_b, self.mu_b, label='Maximum Sharpe (Borrowing)')
+                ax.scatter(0, self.rb, label='Borrowing Cost')
+
+                max_sigma = self.sigma.max() + 0.05
+                x_bor1 = [0, self.sigma_b]
+                x_bor2 = [self.sigma_b, max_sigma]
+                y_bor1 = [self.rb, self.rb + self.sharpe_b * self.sigma_b]
+                y_bor2 = [self.rb + self.sharpe_b * self.sigma_b, self.rb + self.sharpe_b * max_sigma]
+                plt.plot(x_bor1, y_bor1, marker=None, zorder=-1, color='grey', ls='--', lw=1, label=None)
+                plt.plot(x_bor2, y_bor2, marker=None, zorder=-1, color='grey', label='Capital Allocation Line (Borrowing)')
 
         if investor and (self.risk_aversion is not None):
             max_sigma = self.sigma_c + 0.02
             x_values = np.arange(0, max_sigma, max_sigma / 100)
             y_values = self.certain_equivalent + 0.5 * self.risk_aversion * (x_values ** 2)
-            ax.plot(x_values, y_values, marker=None, color='purple', zorder=-1, label='Indiference Curve')
+            ax.plot(x_values, y_values, marker=None, zorder=-1, label='Indiference Curve')
             ax.scatter(self.sigma_c, self.mu_c, label="Investor's Portfolio")
 
         # Adjustments
@@ -185,12 +206,12 @@ class MeanVar:
 
         return weight_p, complete_weights, mu_c, sigma_c, ce
 
-    def _get_optimal_risky_portfolio(self):
+    def _get_optimal_risky_portfolio(self, rf):
 
         if self.n_assets == 1:  # one risky asset (analytical)
             mu_p = self.mu.iloc[0]
             sigma_p = self.cov.iloc[0, 0]
-            sharpe_p = (mu_p - self.rf) / sigma_p
+            sharpe_p = (mu_p - rf) / sigma_p
             weights = pd.Series(data={self.mu.index[0]: 1},
                                 name='Risky Weights')
 
@@ -198,7 +219,7 @@ class MeanVar:
 
             # objective function (notice the sign change on the return value)
             def sharpe(x):
-                return - self._sharpe(x, self.mu.values, self.cov.values, self.rf, self.n_assets)
+                return - self._sharpe(x, self.mu.values, self.cov.values, rf, self.n_assets)
 
             # budget constraint
             constraints = ({'type': 'eq',

@@ -10,22 +10,22 @@ from allocation import MeanVar
 # ===== Read Data =====
 # =====================
 # IVVB
-# filepath = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Personal Portfolio/data/ETFs.xlsx'  # Mac
-filepath = r"C:\Users\gamarante\Dropbox\Personal Portfolio\data\ETFs.xlsx"  # Work
+filepath = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Personal Portfolio/data/ETFs.xlsx'  # Mac
+# filepath = r"C:\Users\gamarante\Dropbox\Personal Portfolio\data\ETFs.xlsx"  # Work
 ivvb = pd.read_excel(filepath, index_col=0, na_values=['#N/A N/A'], sheet_name='values')
 ivvb = ivvb['IVVB11 BZ Equity'].rename('IVVB')
 ivvb = ivvb.dropna()
 
 # BDIV
-# filepath = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Personal Portfolio/data/FIPs.xlsx'  # Mac
-filepath = r"C:\Users\gamarante\Dropbox\Personal Portfolio\data\FIPs.xlsx"  # Work
+filepath = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Personal Portfolio/data/FIPs.xlsx'  # Mac
+# filepath = r"C:\Users\gamarante\Dropbox\Personal Portfolio\data\FIPs.xlsx"  # Work
 bdiv = pd.read_excel(filepath, index_col=0, sheet_name='Trackers')
 bdiv = bdiv['BDIV']
 bdiv = bdiv.dropna()
 
 # NTNB
-# filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx'  # Mac
-filepath = r"C:\Users\gamarante\PycharmProjects\pyaa\trackers\output data\trackers_ntnb.xlsx"  # Work
+filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx'  # Mac
+# filepath = r"C:\Users\gamarante\PycharmProjects\pyaa\trackers\output data\trackers_ntnb.xlsx"  # Work
 ntnb = pd.read_excel(filepath, index_col=0)
 ntnb = ntnb['NTNB 10y']
 

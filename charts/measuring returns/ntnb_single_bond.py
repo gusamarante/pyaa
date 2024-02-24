@@ -6,7 +6,7 @@ from tqdm import tqdm
 from time import time
 import pandas as pd
 
-last_year = 2023
+last_year = 2024
 notional_start = 100
 start_date = '2006-01-01'
 size = 5
@@ -15,7 +15,7 @@ size = 5
 ntnb = pd.DataFrame()
 
 for year in tqdm(range(2003, last_year + 1), 'Reading files'):
-    aux = pd.read_csv(f'input data/dados_ntnb {year}.csv', sep=';')
+    aux = pd.read_csv(f'/Users/gustavoamarante/PycharmProjects/pyaa/trackers/input data/dados_ntnb {year}.csv', sep=';')
     ntnb = pd.concat([ntnb, aux])
 
 ntnb['reference date'] = pd.to_datetime(ntnb['reference date'])

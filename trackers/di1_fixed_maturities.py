@@ -8,7 +8,7 @@ tic = time()
 
 # User defined parameters
 desired_maturities = [21 * t for t in range(1, 15 * 12 + 1)] # in DUs
-last_year = 2023
+last_year = 2024
 start_date = '2006-01-01'
 
 # Read the Data

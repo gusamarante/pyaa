@@ -14,8 +14,6 @@ import getpass
 
 # User defined parameters
 start_date = '2007-01-01'
-exposition_pcadv01 = [100, 0, 0]
-exposition_pca_number = 1
 username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024/figures')
 

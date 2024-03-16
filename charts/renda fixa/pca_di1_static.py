@@ -3,14 +3,15 @@ generates the charts for the static PCA analysis for yield curves based on
 the DI futures curve.
 """
 
+import getpass
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from pathlib import Path
+import numpy.linalg as la
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from sklearn.decomposition import PCA
-from pathlib import Path
-import getpass
+
 
 # User defined parameters
 start_date = '2007-01-01'
@@ -45,6 +46,20 @@ df_pca_full = pd.DataFrame(data=pca.transform(rate.values),
 signal = np.sign(df_loadings_full.iloc[-1])
 df_loadings_full = df_loadings_full * signal
 df_pca_full = df_pca_full * signal
+
+
+# =======================
+# ===== PCA by Hand =====
+# =======================
+val, vec = la.eig(rate.cov())
+explained_varaince = val / val.sum()
+
+loadings = vec[:, 0:3]  # First 3 components
+signal = np.sign(loadings[-1, :])  # Normalize signal
+loadings = loadings * signal
+
+X = rate.values - rate.values.mean(axis=0)
+pcs = X @ loadings
 
 
 # ==================

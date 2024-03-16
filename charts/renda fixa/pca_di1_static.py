@@ -19,7 +19,7 @@ username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024/figures')
 
 # get data
-rate = pd.read_excel('/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/di fixed maturities.xlsx',
+rate = pd.read_excel(f'/Users/{username}/PycharmProjects/pyaa/trackers/output data/di fixed maturities.xlsx',
                      sheet_name='Rate',
                      index_col=0)
 pu = 100_000 / ((1+rate)**(rate.columns / 252))

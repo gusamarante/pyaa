@@ -18,7 +18,7 @@ save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024')
 
 # Read raw files
 df_raw = pd.DataFrame()
-for year in tqdm(range(2006, 2023 + 1), 'Reading Files'):
+for year in tqdm(range(2006, 2024 + 1), 'Reading Files'):
     aux = pd.read_csv(save_path.joinpath(f'data/DI1/dados_di1 {year}.csv'),
                       sep=';')
     df_raw = pd.concat([df_raw, aux], axis=0)

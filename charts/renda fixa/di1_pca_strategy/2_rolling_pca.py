@@ -14,7 +14,7 @@ import getpass
 username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024')
 window = 5  # in years
-start_date = "2023-10-01"
+start_date = "2011-01-01"
 
 # Create Connection to DB
 db_file = save_path.joinpath(r"di1pca.db")
@@ -38,19 +38,12 @@ df_curve = df_curve.dropna(how='any', axis=1)
 df_curve.index = pd.to_datetime(df_curve.index)
 
 
-# ======================
-# ===== Build DV01 =====
-# ======================
-df_dv01 = df.pivot(index='reference_date', columns='du', values='dv01')
-df_dv01 = df_dv01 * 10_000  # PCA-DV01 requires move per unit of PC, so the DV01 has to be per unit of rate
-
-
 # ================================
 # ===== Backtested PC Signal =====
 # ================================
-df_pca = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'])
-df_loadings = pd.DataFrame(columns=['reference_date', 'du', 'PC 1', 'PC 2', 'PC 3', 'PC 4'])
-df_var = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'])
+df_pca = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3'])
+df_loadings = pd.DataFrame(columns=['reference_date', 'du', 'PC 1', 'PC 2', 'PC 3'])
+df_var = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3'])
 dates2loop = df_curve.index[df_curve.index >= start_date]
 
 for d in tqdm(dates2loop):
@@ -60,14 +53,14 @@ for d in tqdm(dates2loop):
     if len(aux) < 252:
         continue
 
-    pca = PCA(n_components=4)
+    pca = PCA(n_components=3)
     pca.fit(aux.values)
 
     current_loadings = pd.DataFrame(data=pca.components_,
-                                    index=['PC 1', 'PC 2', 'PC 3', 'PC 4'],
+                                    index=['PC 1', 'PC 2', 'PC 3'],
                                     columns=df_curve.columns).T
     current_pca = pd.DataFrame(data=pca.transform(aux.values),
-                               columns=['PC 1', 'PC 2', 'PC 3', 'PC 4'],
+                               columns=['PC 1', 'PC 2', 'PC 3'],
                                index=aux.index)
 
     # Normalize the signal: all effect on the longer end are positive

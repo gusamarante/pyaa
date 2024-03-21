@@ -11,7 +11,9 @@ import getpass
 # User Defined Parameters
 username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024')
-window = 5  # in years
+
+sd_enter = 1.5
+sd_exit = 0.5
 
 # Create Connection to DB
 db_file = save_path.joinpath(r"di1pca.db")
@@ -36,14 +38,6 @@ with sqlite3.connect(db_file) as conn:
             """
     df_sd = pd.read_sql(query, conn)
 
-    # Query the factor loadings
-    query = """
-            SELECT reference_date, du, pc, loading FROM di1_loadings
-            where window_type = 'rolling 5y'
-            and pc in ('PC 2', 'PC 3');
-            """
-    df_loadings = pd.read_sql(query, conn)
-
 # Organize the raw data
 df_raw['maturity_date'] = pd.to_datetime(df_raw['maturity_date'])
 df_raw['reference_date'] = pd.to_datetime(df_raw['reference_date'])
@@ -56,15 +50,6 @@ df_pc = df_pc.pivot(index='reference_date', columns='pc', values='pc_value')
 df_sd['reference_date'] = pd.to_datetime(df_sd['reference_date'])
 df_sd = df_sd.pivot(index='reference_date', columns='pc', values='pc_variance')
 df_sd = np.sqrt(df_sd)
-
-# Organize the loadings
-df_loadings['reference_date'] = pd.to_datetime(df_loadings['reference_date'])
-df_load1 = df_loadings[df_loadings['pc'] == 'PC 1']
-df_load1 = df_load1.pivot(index='reference_date', columns='du', values='loading')
-df_load2 = df_loadings[df_loadings['pc'] == 'PC 2']
-df_load2 = df_load2.pivot(index='reference_date', columns='du', values='loading')
-df_load3 = df_loadings[df_loadings['pc'] == 'PC 3']
-df_load3 = df_load3.pivot(index='reference_date', columns='du', values='loading')
 
 # Build the interpolated curve
 df_curve = df_raw.pivot(index='reference_date', columns='du', values='rate')
@@ -84,6 +69,19 @@ def get_portfolio(current_date, pcadv01):
     """
     given a date and the desired exposition vector, returns the chosen contracts
     """
+
+    # Query the factor loadings
+    with sqlite3.connect(db_file) as dbcon:
+        sql = """
+                SELECT reference_date, du, pc, loading FROM di1_loadings
+                where window_type = 'rolling 5y';
+                """
+        df_loadings = pd.read_sql(sql, dbcon)
+
+    df_loadings['reference_date'] = pd.to_datetime(df_loadings['reference_date'])
+    df_load1 = df_loadings[df_loadings['pc'] == 'PC 1']
+    df_load1 = df_load1.pivot(index='reference_date', columns='du',
+                              values='loading')
 
     # TODO query what is needed here
     current_date = pd.to_datetime(current_date)
@@ -120,9 +118,9 @@ def get_portfolio(current_date, pcadv01):
     return selected_portfolio
 
 
-# =================================
-# ===== Backtest the Strategy =====
-# =================================
+# ====================================
+# ===== Generate Signal Decision =====
+# ====================================
 dates2loop = df_pc.index
 backtest = pd.DataFrame()  # To save everything from the backtest
 
@@ -130,15 +128,39 @@ position = pd.DataFrame(columns=['PC 1', 'PC 2', 'PC 3'])
 position.loc[dates2loop[0]] = [0, 0, 0]
 
 dates2loop = zip(dates2loop[1:], dates2loop[:-1])
-for d, dm1 in tqdm(dates2loop, "Backtesting"):
+for d, dm1 in tqdm(dates2loop, "Generating Decisions"):
 
-    # TODO comprar quando estiver abaixo/acima de 1.5 desvios.
-    #  Vender quando voltar para mais/menos que 0.5 desvios
-    cond_above = df_pca.loc[d] > sd_enter * df_std.loc[d]
-    cond_below = df_pca.loc[d] < - sd_enter * df_std.loc[d]
+    # Where the signal stands today
+    cond_above = df_pc.loc[d] > sd_enter * df_sd.loc[d]
+    cond_below = df_pc.loc[d] < - sd_enter * df_sd.loc[d]
     cond_middle = (~cond_above) & (~cond_below)
+
+    cond_exit_short = df_pc.loc[d] < sd_exit * df_sd.loc[d]
+    cond_exit_long = df_pc.loc[d] > - sd_exit * df_sd.loc[d]
 
     cond_long = position.loc[dm1] == 1
     cond_short = position.loc[dm1] == -1
     cond_neutral = position.loc[dm1] == 0
-    position = cond_above * (-1) + cond_below * 1 + cond_middle
+
+    # --- Decision ---
+    # PC above threshold - Sell it
+    cond1 = cond_above
+    # PC below threshold - Buy it
+    cond2 = cond_below
+    # Already short, not below exit - Stay short
+    cond3 = cond_short & (~cond_exit_short)
+    # Already long, not above exit - Stay long
+    cond4 = cond_long & (~cond_exit_long)
+    # Was short, now exit to neutral
+    cond5 = cond_short & cond_exit_short
+    # Was long, now exit to neutral
+    cond6 = cond_long & cond_exit_long
+    # Anything else, stay neutral
+    cond7 = ~(cond1 | cond2 | cond3 | cond4 | cond5 | cond6)
+
+    position.loc[d] = (cond1 | cond3) * (-1) + (cond2 | cond4) * 1 + (cond5 | cond6 | cond7) * 0
+
+# TODO Chart of the signal, with ranges and decision
+
+# TODO Backtest
+#  when signal changes, rebuild and set rebalance for m months

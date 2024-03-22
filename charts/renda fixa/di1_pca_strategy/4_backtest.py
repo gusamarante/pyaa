@@ -4,6 +4,7 @@ Run the backtest based on pre-computed PCs
 import matplotlib.ticker as plticker
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+from utils import Performance
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
@@ -277,6 +278,7 @@ dates2loop = df_pc.index
 backtest = pd.DataFrame()  # To save everything from the backtest
 dates2loop = zip(dates2loop[1:], dates2loop[:-1])
 has_notional = False
+notional  = 0
 
 
 for d, dm1 in tqdm(dates2loop, "Backtesting"):
@@ -300,6 +302,20 @@ for d, dm1 in tqdm(dates2loop, "Backtesting"):
     backtest.loc[d, 'pnl'] = pnl
 
 
-backtest.to_clipboard()
+fd = backtest.index[0]
+backtest.loc[fd, 'pnl'] = backtest.loc[fd, 'pnl'] + notional
+backtest['pnl'] = backtest['pnl'].cumsum()
 
-# TODO checar a direção da exposição da posição montada
+
+# ============================
+# ===== Evaluate Results =====
+# ============================
+perf = Performance(backtest)
+print(perf.table)
+
+
+backtest['pnl'].plot()
+plt.show()
+
+
+# TODO Control rebalance dates

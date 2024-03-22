@@ -1,6 +1,9 @@
 """
 Run the backtest based on pre-computed PCs
 """
+import matplotlib.ticker as plticker
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
@@ -62,62 +65,6 @@ df_dv01 = df_raw.pivot(index='reference_date', columns='du', values='dv01')
 df_dv01 = df_dv01 * 10_000  # PCA-DV01 requires move per unit of PC, so the DV01 has to be per unit of rate
 
 
-# =======================================
-# ===== Portfolio Building Function =====
-# =======================================
-def get_portfolio(current_date, pcadv01):
-    """
-    given a date and the desired exposition vector, returns the chosen contracts
-    """
-
-    # Query the factor loadings
-    with sqlite3.connect(db_file) as dbcon:
-        sql = """
-                SELECT reference_date, du, pc, loading FROM di1_loadings
-                where window_type = 'rolling 5y';
-                """
-        df_loadings = pd.read_sql(sql, dbcon)
-
-    df_loadings['reference_date'] = pd.to_datetime(df_loadings['reference_date'])
-    df_load1 = df_loadings[df_loadings['pc'] == 'PC 1']
-    df_load1 = df_load1.pivot(index='reference_date', columns='du',
-                              values='loading')
-
-    # TODO query what is needed here
-    current_date = pd.to_datetime(current_date)
-
-    current_loadings = df_loadings[df_loadings['reference_date'] == current_date]
-
-    # TODO add liquidity filter here... eventually
-
-    available_maturities = df_dv01.loc[current_date].dropna().index
-    available_maturities = available_maturities[df_curve.columns.min() <= available_maturities]
-    available_maturities = available_maturities[df_curve.columns.max() >= available_maturities]
-
-    aux_pcadv01 = current_loadings.loc[available_maturities]
-    aux_pcadv01 = aux_pcadv01.multiply(df_dv01.loc[current_date, available_maturities], axis=0)
-    aux_pcadv01 = aux_pcadv01.astype(float)  # TODO is this needed?
-
-    # Choose 3 contracts
-    vertices_du = aux_pcadv01.idxmax().sort_values().values
-
-    selected_portfolio = pd.DataFrame(index=vertices_du)
-    cond_date = df_raw['reference_date'] == current_date
-    cond_du = df_raw['du'].isin(vertices_du)
-    current_data = df_raw[cond_date & cond_du].sort_values('du')
-
-    selected_portfolio['contracts'] = current_data['contract'].values
-    selected_portfolio['pu'] = current_data['theoretical_price'].values
-    selected_portfolio[['Loadings 1', 'Loadings 2', 'Loadings 3']] = current_loadings.loc[vertices_du]
-    selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3']] = aux_pcadv01.loc[vertices_du]
-
-    coeff = selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3']].T.values
-    constants = np.array(pcadv01)
-    selected_portfolio['quantities'] = np.linalg.inv(coeff) @ constants
-
-    return selected_portfolio
-
-
 # ====================================
 # ===== Generate Signal Decision =====
 # ====================================
@@ -160,7 +107,199 @@ for d, dm1 in tqdm(dates2loop, "Generating Decisions"):
 
     position.loc[d] = (cond1 | cond3) * (-1) + (cond2 | cond4) * 1 + (cond5 | cond6 | cond7) * 0
 
-# TODO Chart of the signal, with ranges and decision
 
-# TODO Backtest
-#  when signal changes, rebuild and set rebalance for m months
+# ==================================
+# ===== Chart of the Decisions =====
+# ==================================
+fig = plt.figure(figsize=(7 * (16 / 9), 7))
+fig.suptitle(
+    "DI1 PCA - Decision Triggers",
+    fontsize=16,
+    fontweight="bold",
+)
+
+# Upper left
+ax = plt.subplot2grid((3, 2), (0, 0), rowspan=2)
+pc = 'PC 2'
+ax.fill_between(
+    x=df_sd.index,
+    y1=-sd_enter * df_sd[pc].values,
+    y2=sd_enter * df_sd[pc].values,
+    label=f"Entry Level {sd_enter}$\sigma$",
+    alpha=0.2,
+    color="green",
+    linewidth=0,
+)
+ax.fill_between(
+    x=df_sd.index,
+    y1=-sd_exit * df_sd[pc].values,
+    y2=sd_exit * df_sd[pc].values,
+    label=f"Exit Level {sd_exit}$\sigma$",
+    alpha=0.3,
+    color="green",
+    linewidth=0,
+)
+ax.plot(df_pc[pc], label=pc, color='darkgreen')
+ax.set_title(f"{pc}")
+ax.grid(axis="y", alpha=0.3)
+ax.grid(axis="x", alpha=0.3)
+ax.axhline(0, color="black", linewidth=0.5)
+locators = mdates.YearLocator()
+ax.xaxis.set_major_locator(locators)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+loc = plticker.MultipleLocator(base=0.1)
+ax.yaxis.set_major_locator(loc)
+ax.legend(frameon=True, loc="upper left")
+
+# Upper right
+ax = plt.subplot2grid((3, 2), (0, 1), rowspan=2)
+pc = 'PC 3'
+ax.fill_between(
+    x=df_sd.index,
+    y1=-sd_enter * df_sd[pc].values,
+    y2=sd_enter * df_sd[pc].values,
+    label=f"Entry Level {sd_enter}$\sigma$",
+    alpha=0.2,
+    color="green",
+    linewidth=0,
+)
+ax.fill_between(
+    x=df_sd.index,
+    y1=-sd_exit * df_sd[pc].values,
+    y2=sd_exit * df_sd[pc].values,
+    label=f"Exit Level {sd_exit}$\sigma$",
+    alpha=0.3,
+    color="green",
+    linewidth=0,
+)
+ax.plot(df_pc[pc], label=pc, color='darkgreen')
+ax.set_title(f"{pc}")
+ax.grid(axis="y", alpha=0.3)
+ax.grid(axis="x", alpha=0.3)
+ax.axhline(0, color="black", linewidth=0.5)
+locators = mdates.YearLocator()
+ax.xaxis.set_major_locator(locators)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+loc = plticker.MultipleLocator(base=0.1)
+ax.yaxis.set_major_locator(loc)
+ax.legend(frameon=True, loc="upper left")
+
+# lower left
+ax = plt.subplot2grid((3, 2), (2, 0))
+pc = 'PC 2'
+ax.plot(position[pc], label=pc, color='darkgreen')
+ax.set_title(f"{pc} - Decision")
+ax.grid(axis="y", alpha=0.3)
+ax.grid(axis="x", alpha=0.3)
+ax.axhline(0, color="black", linewidth=0.5)
+locators = mdates.YearLocator()
+ax.xaxis.set_major_locator(locators)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+loc = plticker.MultipleLocator(base=1)
+ax.yaxis.set_major_locator(loc)
+
+# lower right
+ax = plt.subplot2grid((3, 2), (2, 1))
+pc = 'PC 3'
+ax.plot(position[pc], label=pc, color='darkgreen')
+ax.set_title(f"{pc} - Decision")
+ax.grid(axis="y", alpha=0.3)
+ax.grid(axis="x", alpha=0.3)
+ax.axhline(0, color="black", linewidth=0.5)
+locators = mdates.YearLocator()
+ax.xaxis.set_major_locator(locators)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+loc = plticker.MultipleLocator(base=1)
+ax.yaxis.set_major_locator(loc)
+
+plt.tight_layout()
+# plt.savefig(save_path.joinpath("????.pdf"))
+plt.show()
+plt.close()
+
+
+# =======================================
+# ===== Portfolio Building Function =====
+# =======================================
+def get_portfolio(current_date, pcadv01):
+    """
+    given a date and the desired exposition vector, returns the chosen contracts
+    """
+
+    # Query the factor loadings
+    with sqlite3.connect(db_file) as dbcon:
+        sql = f"""
+        SELECT du, pc, loading FROM di1_loadings 
+        WHERE window_type = 'rolling 5y'
+        AND reference_date = '{current_date}';
+        """
+        df_loadings = pd.read_sql(sql, dbcon)
+
+    df_loadings = df_loadings.pivot(index='du', columns='pc', values='loading')
+
+    # TODO add liquidity filter here... eventually
+
+    available_maturities = df_dv01.loc[current_date].dropna().index
+    available_maturities = available_maturities[3*21 <= available_maturities]
+    available_maturities = available_maturities[5*252 >= available_maturities]
+
+    aux_pcadv01 = df_loadings.loc[available_maturities]
+    aux_pcadv01 = aux_pcadv01.multiply(df_dv01.loc[current_date, available_maturities], axis=0)
+
+    # Choose 3 contracts
+    vertices_du = aux_pcadv01.idxmax().sort_values().values
+
+    selected_portfolio = pd.DataFrame(index=vertices_du)
+    cond_date = df_raw['reference_date'] == current_date
+    cond_du = df_raw['du'].isin(vertices_du)
+    current_data = df_raw[cond_date & cond_du].sort_values('du')
+
+    selected_portfolio['contracts'] = current_data['contract'].values
+    selected_portfolio['pu'] = current_data['theoretical_price'].values
+    selected_portfolio[['Loadings 1', 'Loadings 2', 'Loadings 3']] = df_loadings.loc[vertices_du]
+    selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3']] = aux_pcadv01.loc[vertices_du]
+
+    coeff = selected_portfolio[['PCADV01 1', 'PCADV01 2', 'PCADV01 3']].T.values
+    constants = np.array(pcadv01)
+    selected_portfolio['quantities'] = np.linalg.inv(coeff) @ constants
+
+    return selected_portfolio
+
+
+# ====================
+# ===== Backtest =====
+# ====================
+dates2loop = df_pc.index
+backtest = pd.DataFrame()  # To save everything from the backtest
+dates2loop = zip(dates2loop[1:], dates2loop[:-1])
+has_notional = False
+
+
+for d, dm1 in tqdm(dates2loop, "Backtesting"):
+
+    desired_dv01 = position.loc[dm1].values * np.array([0, 1000, 5000])
+    port = get_portfolio(dm1, desired_dv01)  # LAG FOR INFORMATION
+    port = port.set_index('contracts')
+
+    if (port['quantities'] == 0).all() and not has_notional:
+        continue
+    elif (port['quantities'] == 0).all() and has_notional:
+        pass
+    else:
+        notional = (port['quantities'] * port['pu']).sum()
+        has_notional = True
+
+    cond_date = df_raw['reference_date'] == d
+    cond_contracts = df_raw['contract'].isin(port.index)
+    mtm = df_raw[cond_date & cond_contracts][['contract', 'pnl']].set_index('contract')['pnl']
+    pnl = (port['quantities'] * mtm).sum()
+    backtest.loc[d, 'pnl'] = pnl
+
+
+backtest.to_clipboard()
+
+# TODO checar a direção da exposição da posição montada

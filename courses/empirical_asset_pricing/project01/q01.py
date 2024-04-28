@@ -173,51 +173,9 @@ if show_charts:
 plt.close()
 
 
-# ======================================
-# ===== Chart - Alphas for the FF25 ====
-# ======================================
-fig = plt.figure(figsize=(5 * (16 / 9), 5))
-
-#  --- Bar ---
-ax = plt.subplot2grid((1, 2), (0, 0))
-# ax.set_title("Betas of the Market Model")
-ax = alphas.plot(kind='bar', ax=ax)
-ax.axhline(0, color="black", lw=0.5)
-
-#  --- Heatmap ---
-alphas_table = alphas.reset_index().rename({0: 'Alpha'}, axis=1)
-alphas_table = alphas_table.pivot(index='Size', columns='Value', values='Alpha')
-alphas_table = alphas_table.sort_index(ascending=False)
-ax = plt.subplot2grid((1, 2), (0, 1))
-# ax.set_title("Standard Deviation of Monthly Returns")
-ax = sns.heatmap(
-    alphas_table,
-    ax=ax,
-    cbar=True,
-    annot=True,
-    fmt=".2f",
-    cmap="RdBu",
-    annot_kws={"fontsize": 12, "weight": "normal"},
-    linewidths=1,
-    linecolor="lightgrey",
-    center=0,  # Force 1 to be white
-)
-ax.tick_params(rotation=0, axis="y")
-plt.tick_params(axis="x", which="both", top=False, bottom=False)
-plt.tick_params(axis="y", which="both", left=False)
-
-
-plt.tight_layout()
-
-plt.savefig(file_path.joinpath("figures/Q01 Alphas to Mkt.pdf"))
-if show_charts:
-    plt.show()
-plt.close()
-
-
-# ======================================
-# ===== Chart - Alphas for the FF25 ====
-# ======================================
+# ==================================
+# ===== Chart - R2 for the FF25 ====
+# ==================================
 fig = plt.figure(figsize=(5 * (16 / 9), 5))
 
 #  --- Bar ---

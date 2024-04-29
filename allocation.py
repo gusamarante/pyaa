@@ -20,7 +20,9 @@ class MeanVar:
 
         # Assertions
         self._assert_indexes(mu, cov)
-        assert rb > rf, "'rb' must be larger than 'rf'"
+
+        if rb is not None:
+            assert rb > rf, "'rb' must be larger than 'rf'"
 
 
         # Save attributes

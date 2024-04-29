@@ -24,7 +24,7 @@ size = 5
 
 # ===== Read the Data =====
 # Excel
-file_path = r"C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Dados BBG AA Course.xlsx"  # Work
+file_path = r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"  # Work
 df_dy = pd.read_excel(file_path, sheet_name='IDX_EST_DVD_YLD', skiprows=4, index_col=0)
 df_dy = df_dy.dropna(how='all')
 df_dy = df_dy.sort_index()
@@ -112,8 +112,6 @@ ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
 
-plt.savefig(r"C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Equities- Ex ante ERP Estimates.pdf")
+plt.savefig(r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Figures/Equities- Ex ante ERP Estimates.pdf")
 plt.show()
 plt.close()
-
-

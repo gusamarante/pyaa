@@ -21,7 +21,8 @@ fred = FRED()
 ffer = fred.fetch(series_id={'DFF': 'FFER'})
 ffer = (1 + ffer['FFER']/100)**(1/252) - 1
 
-filepath = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Dados BBG AA Course.xlsx"  # work
+# filepath = "C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"  # work
+filepath = "/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"  # home
 df = pd.read_excel(filepath, index_col=0, skiprows=4, sheet_name="UST Total Return")
 df = df.drop('Dates', axis=0)
 df = df.sort_index()
@@ -70,8 +71,8 @@ for x, y, lb in zip(perf.std.values * 100, perf.returns_ann.values * 100, labels
 
 plt.tight_layout()
 
-# save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Asset Allocation/Figures/Bonds - UST Historical Excess Returns.pdf'  # mac
-save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Bonds - UST Historical Excess Returns.pdf"  # work
+save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Figures/Bonds - UST Historical Excess Returns.pdf'  # home
+# save_path = "C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Figures/Bonds - UST Historical Excess Returns.pdf"  # work
 plt.savefig(save_path)
 plt.show()
 plt.close()

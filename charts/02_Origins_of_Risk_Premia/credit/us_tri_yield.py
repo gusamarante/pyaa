@@ -20,7 +20,8 @@ size = 5
 # ================
 # ===== Data =====
 # ================
-filepath = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Dados BBG AA Course.xlsx"  # work
+# filepath = "C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"  # work
+filepath = "/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"  # home
 df = pd.read_excel(filepath, index_col=0, skiprows=4, sheet_name="Credit")
 df = df.drop('Dates', axis=0)
 df.index = pd.to_datetime(df.index)
@@ -69,8 +70,8 @@ ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
 
-# save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Asset Allocation/Figures/Credit - US HY vs IG.pdf'  # mac
-save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Credit - US HY vs IG.pdf"  # work
+save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Figures/Credit - US HY vs IG.pdf'  # home
+# save_path = "C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Figures/Credit - US HY vs IG.pdf"  # work
 plt.savefig(save_path)
 plt.show()
 plt.close()

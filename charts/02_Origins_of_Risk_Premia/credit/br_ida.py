@@ -12,8 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import matplotlib.dates as mdates
-from bwmktdata import Macrobond
-from bwsecrets.api import get_secret
+from utils import SGS
 
 size = 5
 
@@ -21,24 +20,18 @@ size = 5
 # ================
 # ===== Data =====
 # ================
-filepath = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Dados BBG AA Course.xlsx"  # work
+# filepath = "C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"  # work
+filepath = "/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"  # home
 df = pd.read_excel(filepath, index_col=0, skiprows=4, sheet_name="Credit")
 df = df.drop('Dates', axis=0)
 df.index = pd.to_datetime(df.index)
 df = df.sort_index()
 df = df.dropna(how='all')
 
-# Macrobond
-passwords = get_secret("macrobond")
-mb = Macrobond(client_id=passwords["client_id"], client_secret=passwords["client_secret"])
-mb_tickers = {
-    "brrate0003": "CDI",
-}
-
-df_mb = mb.fetch_series(mb_tickers)
-cdi_rate = df_mb['CDI'].dropna().copy()
-cdi_rate = cdi_rate / 100
-cditr = (1 + cdi_rate).cumprod()
+sgs = SGS()
+cdi = sgs.fetch(series_id={12: 'CDI'})
+cdi = cdi['CDI'] / 100
+cditr = (1 + cdi).cumprod()
 
 
 # =================
@@ -68,8 +61,8 @@ ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
 
-# save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Asset Allocation/Figures/Credit - EU HY vs IG.pdf'  # mac
-save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Credit - Brasil IDA.pdf"  # work
+save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Figures/Credit - Brasil IDA.pdf'  # home
+# save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Credit - Brasil IDA.pdf"  # work
 plt.savefig(save_path)
 plt.show()
 plt.close()

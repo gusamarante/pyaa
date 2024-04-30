@@ -21,8 +21,8 @@ sgs = SGS()
 cdi = sgs.fetch(series_id={12: 'CDI'})
 cdi = cdi['CDI'] / 100
 
-# filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx'  # mac
-filepath = "C:/Users/gamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx"  # work
+filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx'  # home
+# filepath = "C:/Users/gamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx"  # work
 df = pd.read_excel(filepath, index_col=0)
 
 df_rx = df.pct_change(1).sub(cdi, axis=0).dropna()
@@ -68,8 +68,8 @@ for x, y, lb in zip(perf.std.values * 100, perf.returns_ann.values * 100, labels
 
 plt.tight_layout()
 
-# save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Asset Allocation/Figures/Bonds - NTNF Historical Excess Returns.pdf'  # mac
-save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Bonds - NTNF Historical Excess Returns.pdf"  # work
+save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Figures/Bonds - NTNF Historical Excess Returns.pdf'  # home
+# save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Bonds - NTNF Historical Excess Returns.pdf"  # work
 plt.savefig(save_path)
 plt.show()
 plt.close()

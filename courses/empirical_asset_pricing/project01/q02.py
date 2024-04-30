@@ -4,9 +4,10 @@ import seaborn as sns
 from pathlib import Path
 import statsmodels.api as sm
 from scipy.stats import chi2, f
+from getpass import getuser
 
 # User parameters
-file_path = Path("/Users/gustavoamarante/Dropbox/Aulas/Doutorado - Empirical Finance/Project 1")
+file_path = Path(f"/Users/{getuser()}/Dropbox/Aulas/Doutorado - Empirical Finance/Project 1")
 show_charts = False
 
 
@@ -17,12 +18,14 @@ show_charts = False
 ff25 = pd.read_excel(file_path.joinpath("Dados.xlsx"),
                      skiprows=2, header=[0, 1], index_col=0, sheet_name="FF25")
 ff25.index = pd.to_datetime(ff25.index)
-# TODO Subtrair RF?
 
 # --- read factors ---
 ff5f = pd.read_excel(file_path.joinpath("Dados.xlsx"),
                      index_col=0, sheet_name="Factors")
 ff5f.index = pd.to_datetime(ff5f.index)
+
+# --- Execess Returns of the FF25 ---
+ff25 = ff25.sub(ff5f['RF'], axis=0)
 
 # --- summary statistics ---
 means = ff25.mean()
@@ -49,7 +52,6 @@ for s in range(1, 6):
         ic_alpha.loc[(s, v), "LB"] = res.conf_int().loc["const", 0]
         ic_alpha.loc[(s, v), "UB"] = res.conf_int().loc["const", 1]
         df_resids[f"S{s}V{v}"] = res.resid
-
 
 
 # --- Statistics ---
@@ -173,8 +175,6 @@ ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.set_xlabel("Predict Average Monthly Excess Return")
 ax.set_ylabel("Realized Average Monthly Excess Return")
-
-# TODO 45 degree line
 
 plt.tight_layout()
 

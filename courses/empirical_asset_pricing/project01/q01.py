@@ -8,9 +8,10 @@ import pandas as pd
 import seaborn as sns
 from pathlib import Path
 import statsmodels.api as sm
+from getpass import getuser
 
 # User parameters
-file_path = Path("/Users/gustavoamarante/Dropbox/Aulas/Doutorado - Empirical Finance/Project 1")
+file_path = Path(f"/Users/{getuser()}/Dropbox/Aulas/Doutorado - Empirical Finance/Project 1")
 show_charts = False
 
 
@@ -27,8 +28,10 @@ ff5f = pd.read_excel(file_path.joinpath("Dados.xlsx"),
                      index_col=0, sheet_name="Factors")
 ff5f.index = pd.to_datetime(ff5f.index)
 
+# --- Execess Returns of the FF25 ---
+ff25 = ff25.sub(ff5f['RF'], axis=0)
+
 # --- summary statistics ---
-# TODO Subtrair RF?
 means = ff25.mean()
 stds = ff25.std()
 
@@ -50,7 +53,6 @@ for s in range(1, 6):
         r2s.loc[s, v] = res.rsquared
 
 
-
 # ==========================================================
 # ===== Chart - Heatmap of Mean and SD Monthly Returns =====
 # ==========================================================
@@ -66,7 +68,7 @@ fig = plt.figure(figsize=(5 * (16 / 9), 5))
 
 #  --- Mean ---
 ax = plt.subplot2grid((1, 2), (0, 0))
-ax.set_title("Average of Monthly Returns")
+ax.set_title("Average of Monthly Excess Returns")
 ax = sns.heatmap(
     mean_table,
     ax=ax,
@@ -85,7 +87,7 @@ plt.tick_params(axis="y", which="both", left=False)
 
 #  --- SD ---
 ax = plt.subplot2grid((1, 2), (0, 1))
-ax.set_title("Standard Deviation of Monthly Returns")
+ax.set_title("Standard Deviation of Monthly Excess Returns")
 ax = sns.heatmap(
     sd_table,
     ax=ax,
@@ -117,11 +119,11 @@ plt.close()
 fig = plt.figure(figsize=(5 * (16 / 9), 5))
 
 ax = plt.subplot2grid((1, 2), (0, 0))
-ax.set_title("Average of Monthly Returns")
+ax.set_title("Average of Monthly Excess Returns")
 ax = means.plot(kind='bar', ax=ax)
 
 ax = plt.subplot2grid((1, 2), (0, 1))
-ax.set_title("Standard Deviation of Monthly Returns")
+ax.set_title("Standard Deviation of Monthly Excess Returns")
 ax = stds.plot(kind='bar', ax=ax)
 
 plt.tight_layout()

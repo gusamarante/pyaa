@@ -1,3 +1,7 @@
+"""
+This has all of questions 3 and 4
+"""
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns

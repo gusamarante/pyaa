@@ -77,7 +77,7 @@ for add_cons in [True, False]:
                 Y.loc['TA', 'Mkt'] = fmeans.loc['Mkt']
                 S.loc['Mkt'] = 0
                 S['Mkt'] = 0
-                S.loc['Mkt', 'Mkt'] = 0.0000001
+                S.loc['Mkt', 'Mkt'] = 1e-12
 
             # Add constant or not
             if add_cons:
@@ -108,9 +108,84 @@ for add_cons in [True, False]:
             df2nd.append(res)
 
 df2nd = pd.concat(df2nd, axis=1).T
-
+df2nd = df2nd.set_index(['Add Const', 'Estimator', 'Include TA'])
 print(df2nd)
 
+# ===============================================
+# ===== Chart Q4 - Plot all the regressions =====
+# ===============================================
+fig = plt.figure(figsize=(5 * (16 / 9), 5))
 
-# TODO CS regression
-# TODO Test
+# --- Without test asset ---
+ax_nta = plt.subplot2grid((1, 2), (0, 0))
+ax_nta.set_title('Without test asset on 2nd stage')
+ax_nta.scatter(betas.values, means.values)  # 25 portfolios
+ax_nta.scatter(1, fmeans.loc['Mkt'], color='tab:orange')  # Market portfolio
+
+# OLS no const
+c = df2nd.loc[(False, 'OLS', False), 'const']
+cp1 = c + df2nd.loc[(False, 'OLS', False), 'lambda']
+ax_nta.axline([0, c], [1, cp1], color="tab:green")
+
+# GLS no const
+c = df2nd.loc[(False, 'GLS', False), 'const']
+cp1 = c + df2nd.loc[(False, 'GLS', False), 'lambda']
+ax_nta.axline([0, c], [1, cp1], color="tab:green", ls='--')
+
+# OLS const
+c = df2nd.loc[(True, 'OLS', False), 'const']
+cp1 = c + df2nd.loc[(True, 'OLS', False), 'lambda']
+ax_nta.axline([0, c], [1, cp1], color="tab:red")
+
+# GLS const
+c = df2nd.loc[(True, 'GLS', False), 'const']
+cp1 = c + df2nd.loc[(True, 'GLS', False), 'lambda']
+ax_nta.axline([0, c], [1, cp1], color="tab:red", ls='--')
+
+ax_nta.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax_nta.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax_nta.set_xlim((0.8, 1.5))
+ax_nta.set_ylim((0.2, 1.2))
+ax_nta.set_xlabel(r"$\beta$")
+ax_nta.set_ylabel("Average Monthly Excess Return")
+
+
+# --- With test asset ---
+ax_ta = plt.subplot2grid((1, 2), (0, 1))
+ax_ta.scatter(betas.values, means.values)
+ax_ta.scatter(1, fmeans.loc['Mkt'], color='tab:orange')
+ax_ta.set_title('With test asset on 2nd stage')
+
+# OLS no const
+c = df2nd.loc[(False, 'OLS', True), 'const']
+cp1 = c + df2nd.loc[(False, 'OLS', True), 'lambda']
+ax_ta.axline([0, c], [1, cp1], color="tab:green")
+
+# GLS no const
+c = df2nd.loc[(False, 'GLS', True), 'const']
+cp1 = c + df2nd.loc[(False, 'GLS', True), 'lambda']
+ax_ta.axline([0, c], [1, cp1], color="tab:green", ls='--')
+
+# OLS const
+c = df2nd.loc[(True, 'OLS', True), 'const']
+cp1 = c + df2nd.loc[(True, 'OLS', True), 'lambda']
+ax_ta.axline([0, c], [1, cp1], color="tab:red")
+
+# GLS const
+c = df2nd.loc[(True, 'GLS', True), 'const']
+cp1 = c + df2nd.loc[(True, 'GLS', True), 'lambda']
+ax_ta.axline([0, c], [1, cp1], color="tab:red", ls='--')
+
+ax_ta.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax_ta.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax_ta.set_xlim((0.8, 1.5))
+ax_ta.set_ylim((0.2, 1.2))
+ax_ta.set_xlabel(r"$\beta$")
+ax_ta.set_ylabel("Average Monthly Excess Return")
+
+
+plt.tight_layout()
+plt.savefig(file_path.joinpath("figures/Q04 Eight versions of cs regressions.pdf"))
+if show_charts:
+    plt.show()
+plt.close()

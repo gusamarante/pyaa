@@ -179,7 +179,7 @@ ax.set_ylabel("Realized Average Monthly Excess Return")
 plt.tight_layout()
 
 plt.savefig(file_path.joinpath("figures/Q02 Predicted VS Realized.pdf"))
-if True:
+if show_charts:
     plt.show()
 plt.close()
 

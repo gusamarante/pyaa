@@ -32,6 +32,7 @@ ff25 = ff25.sub(ff5f['RF'], axis=0)
 # --- summary statistics ---
 means = ff25.mean()
 fmeans = ff5f.mean()
+fvar = ff5f.var()
 
 
 # =======================================================
@@ -59,6 +60,8 @@ for s in range(1, 6):
 # =======================================================
 Sig = df_resids.cov()
 df2nd = []
+T = ff25.shape[0]
+N = ff25.shape[1]
 for add_cons in [True, False]:
     for estimator in ['OLS', 'GLS']:
         for test_assets in [False, True]:
@@ -91,8 +94,24 @@ for add_cons in [True, False]:
             S = S.values
             if estimator == 'OLS':
                 lambda_hat = la.inv(X.T @ X) @ (X.T @ Y)
+                alpha_hat = Y - X @ lambda_hat
+
+                shanken = 1 + (1 / fvar.loc['Mkt']) * lambda_hat.T @ lambda_hat
+                quad_term = np.eye(N + 1 * test_assets) - X @ la.inv(X.T @ X) @ X.T
+                var_alpha = (shanken/T) * quad_term @ S @ quad_term
+
+                test_stat = T * (alpha_hat.T @ la.inv(var_alpha) @ alpha_hat)
+
             else:
                 lambda_hat = la.inv(X.T @ la.inv(S) @ X) @ (X.T @ la.inv(S) @ Y)
+                alpha_hat = Y - X @ lambda_hat
+
+                shanken = 1 + (1 / fvar.loc['Mkt']) * lambda_hat.T @ lambda_hat
+                var_alpha = (shanken / T) * (S - X @ la.inv(X.T @ la.inv(S) @ X) @ X.T)
+
+                test_stat = T * shanken * (alpha_hat.T @ la.inv(S) @ alpha_hat)
+
+            pval = 1 - chi2.cdf(test_stat, N + 1 * test_assets)
 
             cols = ["const", "betas"] if add_cons else ["betas"]
             lambda_hat = pd.Series(index=cols, data=lambda_hat)
@@ -105,11 +124,16 @@ for add_cons in [True, False]:
             except KeyError:
                 res.loc['const'] = 0
 
+            res.loc['test stat'] = test_stat
+            res.loc['pval'] = pval
+
             df2nd.append(res)
 
 df2nd = pd.concat(df2nd, axis=1).T
 df2nd = df2nd.set_index(['Add Const', 'Estimator', 'Include TA'])
+
 print(df2nd)
+
 
 # ===============================================
 # ===== Chart Q4 - Plot all the regressions =====

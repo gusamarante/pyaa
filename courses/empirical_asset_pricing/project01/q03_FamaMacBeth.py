@@ -58,6 +58,8 @@ betas = betas.dropna(how='all')
 
 # --- Second Stage - One cross-sectional regression for each period ---
 params = pd.DataFrame()
+alphas = pd.DataFrame(columns=ff25.columns)
+alphas_noc = pd.DataFrame(columns=ff25.columns)
 for tt in betas.index:
 
     Y = ff25.loc[tt]
@@ -73,8 +75,25 @@ for tt in betas.index:
     params.loc[tt, "lambda"] = res.params.loc['lambda']
     params.loc[tt, "lambda_noc"] = res_noc.params.loc['lambda']
 
-print(params.mean())
-print(params.corr())
+    alphas.loc[tt] = res.resid
+    alphas_noc.loc[tt] = res_noc.resid
+
+print("mean parameter estimated \n", params.mean())
+print("FM std errors", params.std() / params.shape[0])
+print("parameters correl", params.corr())
+
+alpha_hat = alphas.mean()
+alpha_hat_noc = alphas_noc.mean()
+cov_alpha = alphas.cov() / alphas.shape[0]
+cov_alpha_noc = alphas_noc.cov() / alphas_noc.shape[0]
+
+test_stat = alpha_hat @ la.inv(cov_alpha) @ alpha_hat
+pval = 1 - chi2.cdf(test_stat, alphas.shape[1] - 1)
+print("FM test stat", test_stat, "with pval", pval)
+
+test_stat_noc = alpha_hat_noc @ la.inv(cov_alpha_noc) @ alpha_hat_noc
+pval_noc = 1 - chi2.cdf(test_stat_noc, alphas_noc.shape[1] - 1)
+print("FM (noc) test stat", test_stat_noc, "with pval", pval_noc)
 
 
 # ===================================
@@ -95,14 +114,16 @@ if show_charts:
 plt.close()
 
 
-# ===================================
-# ===== Chart - Beta timeseries =====
-# ===================================
+# =====================================
+# ===== Chart - Lambda timeseries =====
+# =====================================
 fig = plt.figure(figsize=(5 * (16 / 9), 5))
 
 ax = plt.subplot2grid((1, 1), (0, 0))
-ax.plot(params['lambda'].dropna(), label='Lambda')
-ax.plot(params['lambda_noc'].dropna(), label='Lambda (No Constant)')
+ax.plot(params['lambda'].dropna(), label='Lambda', color='tab:blue', lw=1)
+ax.plot(params['lambda_noc'].dropna(), label='Lambda (No Constant)', color='tab:orange', lw=1)
+
+ax.axhline(0, color='black', lw=0.5)
 
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
@@ -110,7 +131,7 @@ ax.legend(frameon=True)
 
 plt.tight_layout()
 plt.savefig(file_path.joinpath("figures/Q03 Rolling lambdas.pdf"))
-if True:
+if show_charts:
     plt.show()
 plt.close()
 

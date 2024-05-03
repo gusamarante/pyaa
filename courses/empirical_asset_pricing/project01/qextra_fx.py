@@ -29,17 +29,17 @@ value = value['fx_value']
 value = value.resample('M').last().dropna()
 
 # Build "market" factor
-# mkt = trackers.pct_change(1).mean(axis=1)
-# mkt = 1 + mkt
-# mkt.iloc[0] = 1
-# mkt = mkt.cumprod()
+mkt = trackers.pct_change(1).mean(axis=1)
+mkt = 1 + mkt
+mkt.iloc[0] = 1
+mkt = mkt.cumprod()
 
-mkt = pd.read_csv(file_path.joinpath('credit.csv'), index_col=0)
-mkt.index = pd.to_datetime(mkt.index)
-mkt = mkt['CDX IG']
+cdx = pd.read_csv(file_path.joinpath('credit.csv'), index_col=0)
+cdx.index = pd.to_datetime(cdx.index)
+cdx = cdx['CDX IG']
 
 # concatenate factors
-factors = pd.concat([mkt.rename('mkt'), carry.rename('carry'), value.rename('value')], axis=1)
+factors = pd.concat([mkt.rename('mkt'), cdx.rename('cdx'), carry.rename('carry'), value.rename('value')], axis=1)
 
 # Summary Statistics
 means = trackers.pct_change(1).mean()
@@ -49,18 +49,16 @@ fmeans = factors.pct_change(1).mean()
 # ==========================
 # ===== Estimate betas =====
 # ==========================
-betas = pd.DataFrame()
+betas = pd.DataFrame(columns=factors.columns)
 
 for ccy in trackers.columns:
-    reg_data = pd.concat([trackers[ccy].rename(ccy), factors[['mkt', 'carry', 'value']]], axis=1)
+    reg_data = pd.concat([trackers[ccy].rename(ccy), factors[['mkt', 'cdx', 'carry', 'value']]], axis=1)
     reg_data = reg_data.pct_change(1).dropna()
 
-    model = sm.OLS(reg_data[ccy], sm.add_constant(reg_data[['mkt', 'carry', 'value']]))
+    model = sm.OLS(reg_data[ccy], sm.add_constant(reg_data[['mkt', 'cdx', 'carry', 'value']]))
     res = model.fit()
 
-    betas.loc[ccy, "mkt"] = res.params["mkt"]
-    betas.loc[ccy, "carry"] = res.params["carry"]
-    betas.loc[ccy, "value"] = res.params["value"]
+    betas.loc[ccy] = res.params
 
 print(betas)
 

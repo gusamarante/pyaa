@@ -53,7 +53,7 @@ for s in range(1, 6):
 
         betas.loc[:, (s, v)] = res.params["X"]
 
-betas = betas.dropna(how='all')
+betas = betas.dropna(how='all').astype(float)
 
 
 # --- Second Stage - One cross-sectional regression for each period ---
@@ -62,7 +62,7 @@ alphas = pd.DataFrame(columns=ff25.columns)
 alphas_noc = pd.DataFrame(columns=ff25.columns)
 for tt in betas.index:
 
-    Y = ff25.loc[tt]
+    Y = ff25.loc[tt].astype(float)
     X = sm.add_constant(betas.loc[tt].rename('lambda'))
     X_noc = betas.loc[tt].rename('lambda')
 

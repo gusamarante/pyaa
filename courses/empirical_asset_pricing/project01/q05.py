@@ -47,7 +47,7 @@ factors = factors.dropna().astype(float)
 
 # --- Summary ---
 means = ff25.reindex(factors.index).mean()
-fmeans = ff5f.reindex(factors.index).mean()
+fmeans = factors.reindex(factors.index).mean()
 
 
 # =======================================================
@@ -182,3 +182,32 @@ if show_charts:
     plt.show()
 plt.close()
 
+
+# ========================================
+# ===== Chart - Predicted VS Realized ====
+# ========================================
+predicted = (fmeans * betas).sum(axis=1)
+realized = means
+
+fig = plt.figure(figsize=(5 * (16 / 9), 5))
+ax = plt.subplot2grid((1, 1), (0, 0))
+
+ax.scatter(predicted, realized)
+for s in range(1, 6):
+    for v in range(1, 6):
+        ax.annotate(f"S{s}V{v}", (predicted.loc[s,v] + 0.005, realized.loc[s, v]))
+
+xlims = ax.get_xlim()
+ax.axline([0, 0], [1, 1], color="tab:orange")
+ax.set_xlim(xlims)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.set_xlabel("Predict Average Monthly Excess Return")
+ax.set_ylabel("Realized Average Monthly Excess Return")
+
+plt.tight_layout()
+
+plt.savefig(file_path.joinpath("figures/Q05 Predicted VS Realized.pdf"))
+if show_charts:
+    plt.show()
+plt.close()

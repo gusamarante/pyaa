@@ -151,7 +151,7 @@ class Performance(object):
 
     def _get_drawdowns(self):
         """
-        Finds all of the drawdowns, from peak to bottom, and its dates. At the
+        Finds all the drawdowns, from peak to bottom, and its dates. At the
         margin, even if drawdown is not recovered, it treats the local bottom as
         the bottom of the last drawdon.
         :return: pandas.DataFrame with a MultiIndex. The first level is the asset,

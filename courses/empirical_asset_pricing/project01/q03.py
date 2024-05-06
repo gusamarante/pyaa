@@ -30,8 +30,11 @@ ff5f = pd.read_excel(file_path.joinpath("Dados.xlsx"),
                      index_col=0, sheet_name="Factors")
 ff5f.index = pd.to_datetime(ff5f.index)
 
-# --- Execess Returns of the FF25 ---
-ff25 = ff25.sub(ff5f['RF'], axis=0)
+# --- Manipulations ---
+ff25 = ff25.sub(ff5f['RF'], axis=0)  # generate excess returns
+ff25 = ff25[ff25.index >= "1963-07-01"]  # Filter dates
+
+ff5f = ff5f.drop('RF', axis=1)  # drop RF from factors
 
 # --- summary statistics ---
 means = ff25.mean()
@@ -137,6 +140,7 @@ df2nd = pd.concat(df2nd, axis=1).T
 df2nd = df2nd.set_index(['Add Const', 'Estimator', 'Include TA'])
 
 print(df2nd)
+df2nd.to_clipboard()
 
 
 # ===============================================

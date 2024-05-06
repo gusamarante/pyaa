@@ -64,7 +64,6 @@ S1 = u1.cov()
 invS = la.inv(S1)
 b2_hat = la.inv(d.T @ invS @ d) @ (d.T @ invS @ means.values.reshape((-1, 1)))
 var_b2 = (1 / T) * la.inv(d.T @ invS @ d)
-t = 1
 
 print(b2_hat)
 

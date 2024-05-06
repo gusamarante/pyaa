@@ -5,10 +5,11 @@ from pathlib import Path
 import statsmodels.api as sm
 from scipy.stats import chi2, f
 from getpass import getuser
+import numpy.linalg as la
 
 # User parameters
 file_path = Path(f"/Users/{getuser()}/Dropbox/Aulas/Doutorado - Empirical Finance/Project 1")
-show_charts = False
+show_charts = True
 
 
 # ================
@@ -24,8 +25,11 @@ ff5f = pd.read_excel(file_path.joinpath("Dados.xlsx"),
                      index_col=0, sheet_name="Factors")
 ff5f.index = pd.to_datetime(ff5f.index)
 
-# --- Execess Returns of the FF25 ---
-ff25 = ff25.sub(ff5f['RF'], axis=0)
+# --- Manipulations ---
+ff25 = ff25.sub(ff5f['RF'], axis=0)  # generate excess returns
+ff25 = ff25[ff25.index >= "1963-07-01"]  # Filter dates
+
+ff5f = ff5f.drop('RF', axis=1)  # drop RF from factors
 
 # --- summary statistics ---
 means = ff25.mean()
@@ -67,7 +71,7 @@ print("sample size N", N)
 print("market mean", mkt_mean)
 print("market vol", mkt_vol)
 
-quad_term = alpha_hat @ sigma_hat @ alpha_hat
+quad_term = alpha_hat @ la.inv(sigma_hat) @ alpha_hat
 denom = 1 + (mkt_mean / mkt_vol)**2
 
 XXX_stat = (T / denom) * quad_term

@@ -21,8 +21,8 @@ sgs = SGS()
 cdi = sgs.fetch(series_id={12: 'CDI'})
 cdi = cdi['CDI'] / 100
 
-filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx'  # mac
-# filepath = "C:/Users/gamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx"  # work
+filepath = '/trackers/output data/trackers_ntnf.xlsx'  # home
+# filepath = "C:/Users/gamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx"  # work
 df = pd.read_excel(filepath, index_col=0)
 
 df_rx = df.pct_change(1).sub(cdi, axis=0).dropna()
@@ -39,11 +39,11 @@ print(perf.table)
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
 ax = plt.subplot2grid((1, 2), (0, 0))
-ax.set_title("NTN-B Excess Return Index")
-ax.plot(df_eri['NTNB 1y'], label="1y", color="#3333B2", lw=2)
-ax.plot(df_eri['NTNB 5y'], label="5y", color="#0B6E4F", lw=2)
-ax.plot(df_eri['NTNB 10y'], label="10y", color="#FFBA08", lw=2)
-ax.plot(df_eri['NTNB 25y'], label="25y", color="#F25F5C", lw=2)
+ax.set_title("NTN-F Excess Return Index")
+ax.plot(df_eri['NTNF 1y'], label="1y", color="#3333B2", lw=2)
+ax.plot(df_eri['NTNF 2y'], label="2y", color="#0B6E4F", lw=2)
+ax.plot(df_eri['NTNF 5y'], label="5y", color="#FFBA08", lw=2)
+ax.plot(df_eri['NTNF 8y'], label="8y", color="#F25F5C", lw=2)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.set_ylabel("Index")
@@ -52,8 +52,9 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 ax.tick_params(rotation=90, axis="x")
 ax.legend(frameon=True, loc="best")
 
+
 ax = plt.subplot2grid((1, 2), (0, 1))
-ax.set_title("NTN-B Excess Returns and Vol")
+ax.set_title("NTN-F Excess Returns and Vol")
 ax.plot(perf.std.values * 100, perf.returns_ann.values * 100, color="#3333B2", lw=2)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
@@ -67,8 +68,8 @@ for x, y, lb in zip(perf.std.values * 100, perf.returns_ann.values * 100, labels
 
 plt.tight_layout()
 
-save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Figures/Bonds - NTNB Historical Excess Returns.pdf'  # home
-# save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Bonds - NTNB Historical Excess Returns.pdf"  # work
+save_path = '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Insper - Asset Allocation/Figures/Bonds - NTNF Historical Excess Returns.pdf'  # home
+# save_path = "C:/Users/gamarante/Dropbox/Aulas/Asset Allocation/Figures/Bonds - NTNF Historical Excess Returns.pdf"  # work
 plt.savefig(save_path)
 plt.show()
 plt.close()

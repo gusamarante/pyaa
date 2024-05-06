@@ -42,9 +42,16 @@ vix = vix['VIX Index'].dropna().rename('VIX')
 vix = vix.resample('M').mean()
 
 # --- Orgnize Factors and returns ---
-factors = pd.concat([ff5f.drop(['RF', 'SMB', 'HML', 'RMW', 'CMA'], axis=1), vix], axis=1)
+factors = pd.concat(
+    [
+        ff5f.drop(['RF', 'SMB', 'HML', 'RMW', 'CMA'], axis=1),
+        vix,  # Comment out this line to remove VIX
+    ],
+    axis=1,
+)
 factors = factors.dropna().astype(float)
 factors = factors - factors.mean()  # Demean factors
+factors = factors[factors.index >= "1990-01-01"]
 
 
 # --- Summary Statistics ---
@@ -59,10 +66,12 @@ X = pd.concat([ff25, factors], axis=1)
 X = X.dropna()
 T = X.shape[0]
 varX = X.cov()
+k = X.shape[1] - 25  # Number of factors
 
 # --- 1st Stage ---
-d = varX.iloc[:25, -2:].values
+d = varX.iloc[:25, -k:].values
 b1_hat = la.inv(d.T @ d) @ (d.T @ means.values.reshape((-1, 1)))
+print(b1_hat)
 
 # --- 1st stage residuals ---
 m1 = 1 - factors.values @ b1_hat
@@ -74,6 +83,8 @@ invS = la.inv(S1)
 b2_hat = la.inv(d.T @ invS @ d) @ (d.T @ invS @ means.values.reshape((-1, 1)))
 var_b2 = (1 / T) * la.inv(d.T @ invS @ d)
 
+print(b2_hat)
+
 # --- 2nd stage residuals ---
 m2 = 1 - factors.values @ b2_hat
 u2 = X.iloc[:, :25] * m2 - 1
@@ -82,9 +93,8 @@ S2 = u2.cov()  # we can update S
 # --- Test if all moments have been reached ---
 gT = u2.mean()
 test_stat = T * gT.values @ invS @ gT.values
-dof = 25 - 2
+dof = 25 - k
 pval = 1 - chi2.cdf(test_stat, dof)
 
-print(f"SDF with Mkt and VIX")
 print(f"Test Stat = {test_stat}")
 print(f"pval = {pval}")

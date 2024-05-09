@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+
 def cov2corr(cov):
     # TODO Documentation
     std = np.sqrt(np.diag(cov))

@@ -5,6 +5,8 @@ from pathlib import Path
 from getpass import getuser
 from simulation.randomcov import random_correlation
 
+
+# TODO preencher valores corretos
 mu = pd.Series(
     data={
         "A": 0.12,

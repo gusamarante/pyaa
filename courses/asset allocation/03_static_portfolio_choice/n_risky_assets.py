@@ -3,36 +3,33 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from getpass import getuser
-from simulation.randomcov import random_correlation
 
 
-# TODO preencher valores corretos
 mu = pd.Series(
     data={
-        "A": 0.12,
-        "B": 0.2,
-        "C": 0.15,
-        "D": 0.10,
-        "E": 0.18,
-        "F": 0.08,
+        "A": 0.0606,
+        "B": 0.1065,
+        "C": 0.11,
+        "D": 0.085,
     }
 )
 
 vols = pd.Series(
     data={
-        "A": 0.18,
-        "B": 0.25,
-        "C": 0.20,
-        "D": 0.22,
-        "E": 0.30,
-        "F": 0.18,
+        "A": 0.0888,
+        "B": 0.2255,
+        "C": 0.1064,
+        "D": 0.15,
     }
 )
 
 corr = pd.DataFrame(
     columns=vols.index,
     index=vols.index,
-    data=random_correlation(len(vols), len(vols)),
+    data=[[1, -0.3, -0.2, 0],
+          [-0.3, 1, 0.5, 0],
+          [-0.2, 0.5, 1, 0],
+          [0, 0, 0, 1]],
 )
 
 

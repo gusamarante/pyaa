@@ -121,6 +121,7 @@ class MeanVar:
         # Adjustments
         ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
         ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+        ax.axhline(0, color='black', lw=0.5)
         ax.legend(loc='best')
         ax.set_xlim((0, self.sigma.max() + 0.05))
         ax.set_xlabel('Risk')

@@ -1,5 +1,5 @@
 # pyaa
-Resources for my Asset Allocation course.
+All araound finance resources
 
 
 # Data Sources

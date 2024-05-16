@@ -8,6 +8,7 @@ from matplotlib.ticker import PercentFormatter
 
 class Performance(object):
 
+    # TODO Review
     # TODO Add cumulative/expanding measures - great for backtest
     # TODO relax the definition of a drawdown to include only the last X years
     # TODO Slow moving return and sharpe
@@ -267,3 +268,42 @@ class Performance(object):
         df.loc['Start Date'] = self.start_date
 
         return df
+
+
+def compute_eri(total_return_index, funding_return):
+    # TODO review
+    """
+    Computes the excess returns indexes based on several total return indexes and one series of
+    funding returns (risk-free rate). For now, there are no resample adjustments, so both of the
+    frequencies must be in their correct timing and measurement.
+    :param total_return_index: pandas.DataFrame with the total return indexes
+    :param funding_return: pandas.Series with the funding returns
+    :return: pandas.DataFrame where each column is the Excess Return Index for that given total return index.
+    """
+    assert isinstance(funding_return, pd.Series), 'funding returns must be a pandas.Series'
+
+    total_returns = total_return_index.pct_change(1, fill_method=None)
+    er = total_returns.subtract(funding_return, axis=0)
+    er = er.dropna(how='all')
+
+    eri = (1 + er).cumprod()
+    eri = 100 * eri / eri.fillna(method='bfill').iloc[0]
+
+    return eri
+
+
+def rescale_vol(df, target_vol=0.1):
+    """
+    Rescale return indexes (total or excess) to have the desired volatitlity.
+    :param df: pandas.DataFrame of return indexes.
+    :param target_vol: float with the desired volatility.
+    :return: pandas.DataFrame with rescaled total return indexes.
+    """
+    returns = df.pct_change(1, fill_method=None)
+    returns_std = returns.std() * np.sqrt(252)
+    returns = target_vol * returns / returns_std
+
+    df_adj = (1 + returns).cumprod()
+    df_adj = 100 * df_adj / df_adj.fillna(method='bfill').iloc[0]
+
+    return df_adj

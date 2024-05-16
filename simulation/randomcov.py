@@ -2,8 +2,8 @@ import numpy as np
 from utils.stats import cov2corr
 
 
-# TODO modernize documentation
 def random_covariance(size, n_factors, random_seed=None):
+    # TODO modernize documentation
     """
     Generates a random covariance matrix with 'size' lines and columns and
     'n_factors' factors in the underlying structure of covariance.
@@ -22,6 +22,7 @@ def random_covariance(size, n_factors, random_seed=None):
 
 
 def random_correlation(size, n_factors, random_seed=None):
+    # TODO modernize documentation
     """
     Generates a random correlation matrix with 'size' lines and columns and
     `n_factors` factors in the underlying structure of correlation.

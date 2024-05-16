@@ -1,3 +1,5 @@
+[//]: # (Colocar um índice das coisas que estão dentro do repositório)
+
 # pyaa
 All araound finance resources
 

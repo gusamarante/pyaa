@@ -1,5 +1,5 @@
-from utils.performance import Performance
-from utils.data_api import SGS, FRED
+from utils.performance import Performance, compute_eri
+from data.data_api import SGS, FRED
 from utils.stats import cov2corr, corr2cov
 
 __all__ = [
@@ -8,4 +8,5 @@ __all__ = [
     'SGS',
     'corr2cov',
     'cov2corr',
+    'compute_eri',
 ]

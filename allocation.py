@@ -341,24 +341,61 @@ class MeanVar:
 class HRP(object):
     """
     Implements Hierarchical Risk Parity
+    https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678
     """
 
     def __init__(self, cov, method='single', metric='euclidean'):
         """
-        Combines the assets in `data` using HRP
-        returns an object with the following attributes:
-            - 'cov': covariance matrix of the returns
-            - 'corr': correlation matrix of the returns
-            - 'sort_ix': list of sorted column names according to cluster
-            - 'link': linkage matrix of size (N-1)x4 with structure Y=[{y_m,1  y_m,2  y_m,3  y_m,4}_m=1,N-1].
-                      At the i-th iteration, clusters with indices link[i, 0] and link[i, 1] are combined to form
-                      cluster n+1. A cluster with an index less than n corresponds to one of the original observations.
-                      The distance between clusters link[i, 0] and link[i, 1] is given by link[i, 2]. The fourth value
-                      link[i, 3] represents the number of original observations in the newly formed cluster.
-            - 'weights': final weights for each asset
-        :param data: pandas DataFrame where each column is a series of returns
-        :param method: any method available in scipy.cluster.hierarchy.linkage
-        :param metric: any metric available in scipy.cluster.hierarchy.linkage
+        Implements HRP allocation based on covariance matrix `cov`.
+        This allows for the user to pass covariances matrices that
+        have been treated in any desired way (detoned, denoised,
+        shrunk, etc.). It even allows for singular covariances, which
+        is comceptually wrong in asset pricing theory, but allowed in
+        this allocation method.
+
+
+        Parameters
+        ----------
+        cov : pandas.DataFrame
+            Covaraince matrix of returns
+
+        method : string
+            The linkage algorithm to use. Takes in any method available
+            in scipy.cluster.hierarchy.linkage
+
+        metric : string
+            The distance metric to use. Takes in any metric available
+            in scipy.cluster.hierarchy.linkage
+
+
+        Attributes
+        ----------
+        weights : pd.Series
+            final HRP weights for each asset
+
+        cov : pandas.DataFrame
+            Covariance matrix of the returns
+
+        corr : pandas.DataFrame
+            Correlation matrix of the returns
+
+        sorted_corr : pandas.DataFrame
+            Correlation matrix of the returns, ordered according to the
+            quasi-diagonalization step of the HRP algorithm
+
+        sort_ix : list
+            asdf
+
+        link : numpy.ndarray
+            linkage matrix of size (N-1)x4 with structure
+                Y=[{y_m,1  y_m,2  y_m,3  y_m,4}_m=1,N-1]
+            At the i-th iteration, clusters with indices link[i, 0] and
+            link[i, 1] are combined to form cluster n+1. A cluster with
+            an index less than n corresponds to one of the original
+            observations.
+            The distance between clusters link[i, 0] and link[i, 1] is
+            given by link[i, 2]. The fourth value link[i, 3] represents
+            the number of original observations in the newly formed cluster.
         """
 
         assert isinstance(cov, pd.DataFrame), "input 'cov' must be a pandas DataFrame"
@@ -368,12 +405,11 @@ class HRP(object):
         self.method = method
         self.metric = metric
 
-        self.link = self._tree_clustering(self.corr, self.method, self.metric)
-        self.sort_ix = self._get_quasi_diag(self.link)
-        self.sort_ix = self.corr.index[self.sort_ix].tolist()  # recover labels
+        self.link = self._tree_clustering(self.corr, method, metric)
+        sort_ix_numbers = self._get_quasi_diag(self.link)
+        self.sort_ix = self.corr.index[sort_ix_numbers].tolist()  # recover labels
         self.sorted_corr = self.corr.loc[self.sort_ix, self.sort_ix]  # reorder correlation matrix
         self.weights = self._get_recursive_bisection(self.cov, self.sort_ix)
-        # TODO self.cluster_nember = sch.fcluster(self.link, t=5, criterion='maxclust')
 
     @staticmethod
     def _tree_clustering(corr, method, metric):
@@ -431,19 +467,35 @@ class HRP(object):
         ivp /= ivp.sum()
         return ivp
 
-    def plot_corr_matrix(self, save_path=None, show_chart=True, cmap='vlag', linewidth=0, figsize=(10, 10)):
+    def plot_corr_matrix(self, save_path=None, show_chart=True, cmap='vlag', figsize=(7, 7)):
         """
         Plots the correlation matrix
-        :param save_path: local directory to save file. If provided, saves a png of the image to the address.
-        :param show_chart: If True, shows the chart.
-        :param cmap: matplotlib colormap.
-        :param linewidth: witdth of the grid lines of the correlation matrix.
-        :param figsize: tuple with figsize dimensions.
+
+        Parameters
+        ----------
+        save_path : str or Path
+            local directory to save file. If provided, saves the image to the address
+
+        show_chart: bool
+            If True, shows the chart
+
+        cmap: str
+            matplotlib colormap for the heatmap of the correlation matrix
+
+        figsize: tuple
+            figsize dimensions
         """
 
-        sns.clustermap(self.corr, method=self.method, metric=self.metric, cmap=cmap,
-                       figsize=figsize, linewidths=linewidth,
-                       col_linkage=self.link, row_linkage=self.link)
+        sns.clustermap(data=self.corr,
+                       method=self.method,
+                       metric=self.metric,
+                       cmap=cmap,
+                       figsize=figsize,
+                       linewidths=0,
+                       col_linkage=self.link,
+                       row_linkage=self.link,
+                       vmin=-1,
+                       vmax=1)
 
         if not (save_path is None):
             plt.savefig(save_path)
@@ -453,15 +505,25 @@ class HRP(object):
 
         plt.close()
 
-    def plot_dendrogram(self, show_chart=True, save_path=None, figsize=(8, 8),
-                        threshold=None):
+    def plot_dendrogram(self, show_chart=True, save_path=None, figsize=(7, 7), threshold=None):
         """
         Plots the dendrogram using scipy's own method.
-        :param show_chart: If True, shows the chart.
-        :param save_path: local directory to save file.
-        :param figsize: tuple with figsize dimensions.
-        :param threshold: height of the dendrogram to color the nodes. If None, the colors of the nodes follow scipy's
-                           standard behaviour, which cuts the dendrogram on 70% of its height (0.7*max(self.link[:,2]).
+
+        Parameters
+        ----------
+        show_chart : bool
+            If True, shows the chart
+
+        save_path : str or Path
+            local directory to save file
+
+        figsize: tuple
+            figsize dimensions
+
+        threshold: float
+            height of the dendrogram to color the nodes. If None, the colors of the nodes
+            follow scipy's standard behaviour, which cuts the dendrogram on 70% of its
+            height (0.7 * max(self.link[:, 2]).
         """
 
         plt.figure(figsize=figsize)

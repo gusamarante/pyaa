@@ -338,7 +338,7 @@ class MeanVar:
         return mu - 0.5 * risk_aversion * (sigma ** 2)
 
 
-class HRP(object):
+class HRP:
     """
     Implements Hierarchical Risk Parity
     https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678
@@ -541,7 +541,7 @@ class HRP(object):
         plt.close()
 
 
-class RiskBudgetVol(object):
+class RiskBudgetVol:
     """
     Implements Risk Bedgeting Portfolio described in Thierry Roncalli's book,
     "Introduction to Risk Parity and Budgeting" (2014), using volatility as
@@ -608,7 +608,7 @@ class RiskBudgetVol(object):
         return ((self._risk_contribution(w) - self.budget)**2).sum()
 
 
-class BlackLitterman(object):
+class BlackLitterman:
     # TODO implement qualitative view-setting
 
     def __init__(self, sigma, estimation_error, views_p, views_v, w_equilibrium=None, avg_risk_aversion=1.2,

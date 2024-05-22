@@ -541,38 +541,61 @@ class HRP(object):
         plt.close()
 
 
-class ERC(object):
+class RiskBudgetVol(object):
     """
-    Implements Equal Risk Contribution portfolio
+    Implements Risk Bedgeting Portfolio described in Thierry Roncalli's book,
+    "Introduction to Risk Parity and Budgeting" (2014), using volatility as
+    the risk measure of the portfolio
     """
 
-    def __init__(self, cov, bounded=True):
-        # TODO adapt to numpy array inputs
-        # TODO add a check to see if the resulting risk contributions are the same
+    def __init__(self, cov, budget=None):
+        # TODO assert that indexes of cov and budget match
         """
-        Combines the assets in 'cov' so that all of them have equal contributions to the
-        overall risk of the portfolio.
-        :param cov: pandas DataFrame with the covariance matrix of returns
-        :param bounded: bool, if true, limits the weights to be between 0 and 1
+        Combines the assets in `cov` so that all of them have equal contributions
+        to the overall volatility of the portfolio. The weights are bounded
+        between 0 and 1, as suggested by the authors.
+
+        Parameters
+        ----------
+        cov : pandas.DataFrame
+            covariance matrix of returns
+
+        budget : pandas.Series or None
+            The risk budget vector, each entry is the share of risk contributions
+            of the asset. This vector must add up to 1. If None is passed, equal
+            risk contribution from each asset is assumed.
         """
+
         self.n_assets = cov.shape[0]
         self.cov = cov
 
-        if bounded:
-            bounds = np.hstack([np.zeros((cov.shape[0], 1)), np.ones((cov.shape[0], 1))])
+        if budget is None:
+            # Assume ERC
+            self.budget = np.ones(self.n_assets) / self.n_assets
         else:
-            bounds = None
+            self.budget = budget
 
+        assert self.budget.sum() == 1, "Risk budget must add up to 1"
+
+        # --- Optimization ---
+        bounds = np.hstack([np.zeros((self.n_assets, 1)), np.ones((self.n_assets, 1))])
         cons = ({'type': 'ineq',
                  'fun': lambda w: self._port_vol(w)},  # <= 0
                 {'type': 'eq',
                  'fun': lambda w: 1 - w.sum()})
-        w0 = np.zeros(self.n_assets)
-        res = minimize(self._dist_to_target, w0, method='SLSQP', constraints=cons, bounds=bounds)
-        self.weights = pd.Series(index=cov.columns, data=res.x, name='ERC')
+        res = minimize(fun=self._dist_to_target,
+                       x0=self.budget,
+                       method='SLSQP',
+                       constraints=cons,
+                       bounds=bounds)
+
+        assert res.success, "Optimization did not converge"
+
+        # --- Utilize optimization outputs ---
+        self.weights = pd.Series(index=cov.columns, data=res.x, name='RB Vol')
         self.vol = np.sqrt(res.x @ cov @ res.x)
         self.marginal_risk = (res.x @ cov) / self.vol
-        self.risk_contribution = self.marginal_risk * res.x
+        self.risk_contribution = self.marginal_risk * self.weights
         self.risk_contribution_ratio = self.risk_contribution / self.vol
 
     def _port_vol(self, w):
@@ -582,7 +605,7 @@ class ERC(object):
         return w * ((w @ self.cov) / (self._port_vol(w)**2))
 
     def _dist_to_target(self, w):
-        return np.abs(self._risk_contribution(w) - np.ones(self.n_assets)/self.n_assets).sum()
+        return ((self._risk_contribution(w) - self.budget)**2).sum()
 
 
 class BlackLitterman(object):

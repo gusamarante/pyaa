@@ -3,13 +3,18 @@ Reader for Fama-French Data
 """
 
 import pandas as pd
+import os
+
+
+dir_path = os.path.dirname(__file__)
 
 
 def get_ff5f():
     """
     Reads and process the CSV that has the Fama-French 5 factors
     """
-    ff5f = pd.read_csv("F-F_Research_Data_5_Factors_2x3.csv",
+    file_path = os.path.join(dir_path, "F-F_Research_Data_5_Factors_2x3.csv")
+    ff5f = pd.read_csv(file_path,
                        skiprows=2,
                        nrows=729,  # Update this when CSV is updated
                        index_col=0)
@@ -23,7 +28,8 @@ def get_ffrf():
     """
     Reads and process the CSV that has the Fama-French 5 factors
     """
-    rf = pd.read_csv("F-F_Research_Data_5_Factors_2x3.csv",
+    file_path = os.path.join(dir_path, "F-F_Research_Data_5_Factors_2x3.csv")
+    rf = pd.read_csv(file_path,
                      skiprows=2,
                      nrows=729,  # Update this when CSV is updated
                      index_col=0)
@@ -38,7 +44,8 @@ def get_ff25p():
     Reads and process the CSV that has the Fama-French 25 portfolios
     double-sorted on size and value.
     """
-    ff25 = pd.read_csv("25_Portfolios_5x5.CSV",
+    file_path = os.path.join(dir_path, "25_Portfolios_5x5.CSV")
+    ff25 = pd.read_csv(file_path,
                        skiprows=15,
                        nrows=1173,  # Update this when CSV is updated
                        index_col=0)

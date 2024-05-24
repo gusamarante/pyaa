@@ -55,7 +55,7 @@ for s in range(1, 6):
 # ======================================
 # ===== Chart - Betas for the FF25 =====
 # ======================================
-fig = plt.figure(figsize=(5 * (16 / 9), 5))  # TODO check this size
+fig = plt.figure(figsize=(5 * (16 / 7), 5))  # TODO check this size
 plt.suptitle("Betas of the Market Model", fontweight="bold")
 
 #  --- Bar ---
@@ -93,7 +93,7 @@ plt.close()
 # ================================
 # ===== Chart - Alphas t-test ====
 # ================================
-fig = plt.figure(figsize=(5 * (16 / 9), 5))  # TODO check this size
+fig = plt.figure(figsize=(5 * (16 / 7), 5))  # TODO check this size
 plt.suptitle("Alphas of the Market Model", fontweight="bold")
 
 #  --- Bar ---
@@ -139,7 +139,7 @@ plt.close()
 predicted = betas * mkt.mean()
 realized = ports.mean()
 
-fig = plt.figure(figsize=(5 * (16 / 9), 5))  # TODO check this size
+fig = plt.figure(figsize=(5 * (16 / 7), 5))  # TODO check this size
 # plt.suptitle("Alphas of the Market Model", fontweight="bold")
 ax = plt.subplot2grid((1, 1), (0, 0))
 
@@ -154,8 +154,8 @@ ax.set_xlim((0, 1))
 ax.set_ylim((0, 1.2))
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.set_xlabel("Predict Average Monthly Excess Return")
-ax.set_ylabel("Realized Average Monthly Excess Return")
+ax.set_xlabel(r"Predicted Average Monthly Excess Return   $\hat{\beta}_{i}\bar{R}_{mkt,t}^{e}$")
+ax.set_ylabel(r"Realized Average Monthly Excess Return   $\bar{R}_{i,t}^{e}$")
 ax.legend(loc='upper left', frameon=True)
 
 plt.tight_layout()

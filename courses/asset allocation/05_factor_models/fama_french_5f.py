@@ -54,7 +54,7 @@ for s in range(1, 6):
 # ================================
 # ===== Chart - Alphas t-test ====
 # ================================
-fig = plt.figure(figsize=(5 * (16 / 9), 5))  # TODO check this size
+fig = plt.figure(figsize=(5 * (16 / 7), 5))
 plt.suptitle("Alphas of the Fama-French 5-Factor Model", fontweight="bold")
 
 # --- Bar ---
@@ -100,7 +100,7 @@ plt.close()
 predicted = (betas * factors.mean()).sum(axis=1)
 realized = ports.mean()
 
-fig = plt.figure(figsize=(5 * (16 / 9), 5))  # TODO check this size
+fig = plt.figure(figsize=(5 * (16 / 7), 5))
 ax = plt.subplot2grid((1, 1), (0, 0))
 
 ax.scatter(predicted, realized, label="Fama-French 25 Portfolios")

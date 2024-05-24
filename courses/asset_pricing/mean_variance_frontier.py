@@ -61,5 +61,5 @@ plt.annotate(r'Idiosyncratic Risk',  # text
              va='center')
 
 plt.tight_layout()
-# plt.savefig('/Users/gustavoamarante/Dropbox/Aulas/QuantFin/Asset Pricing/figures/mean_variance_frontier.pdf')
+# plt.savefig('/Users/gustavoamarante/Dropbox/Aulas/QuantFin/asset_pricing/figures/mean_variance_frontier.pdf')
 plt.show()

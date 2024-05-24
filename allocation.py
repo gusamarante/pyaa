@@ -575,8 +575,6 @@ class RiskBudgetVol:
         else:
             self.budget = budget
 
-        assert self.budget.sum() == 1, "Risk budget must add up to 1"
-
         # --- Optimization ---
         bounds = np.hstack([np.zeros((self.n_assets, 1)), np.ones((self.n_assets, 1))])
         cons = ({'type': 'ineq',

@@ -1,4 +1,6 @@
 from allocation import MeanVar
+from getpass import getuser
+from pathlib import Path
 import pandas as pd
 import numpy as np
 
@@ -50,5 +52,5 @@ mv.plot(
     mvfnoss=True,  # MinVar Frontier no short selling
     cal=True,  # Capital Allocation Line
     investor=False,  # Investor's indifference, portfolio, and CE
-    save_path=r"C:\Users\gamarante\Dropbox\Aulas\Insper - Asset Allocation\Figures\Fiancial Instruments - MeanVar Frontier.pdf"
+    save_path=fr"C:\Users\{getuser()}\Dropbox\Aulas\Insper - Asset Allocation\Figures\Fiancial Instruments - MeanVar Frontier.pdf"
 )

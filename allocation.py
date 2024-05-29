@@ -140,6 +140,7 @@ class MeanVar:
         plt.show()
 
     def min_var_frontier(self, n_steps=100, short_sell=True):
+        # TODO Documentation
 
         if short_sell:
             # Analytical solution when short-selling is allowed
@@ -607,7 +608,6 @@ class RiskBudgetVol:
 
 
 class BlackLitterman:
-    # TODO implement qualitative view-setting
 
     def __init__(self, sigma, estimation_error, views_p, views_v, w_equilibrium=None, avg_risk_aversion=1.2,
                  mu_historical=None, mu_shrink=1, overall_confidence=1, relative_uncertainty=None):
@@ -709,9 +709,9 @@ class BlackLitterman:
         the model equilibrium returns and the historical returns.
         """
         best_guess = self.mu_shrink * self.equilibrium_returns.values + (1-self.mu_shrink) * self.mu_historical.values
-        best_guess = pd.DataFrame(data=best_guess,
-                                  index=self.asset_names,
-                                  columns=['Best Guess of mu'])
+        best_guess = pd.Series(data=best_guess.flatten(),
+                               index=self.asset_names,
+                               name='Best Guess of mu')
         return best_guess
 
     def _get_relative_uncertainty(self, relative_uncertainty):
@@ -757,7 +757,7 @@ class BlackLitterman:
         tau = self.estimation_error
         sigma = self.sigma.values
         P = self.views_p.values
-        pi = self.mu_best_guess.values
+        pi = self.mu_best_guess.values.reshape((-1, 1))
         v = self.views_v.values
         omega = self.omega.values
 
@@ -766,6 +766,6 @@ class BlackLitterman:
         mu_bl = sigma_mu_bl @ B
 
         sigma_mu_bl = pd.DataFrame(data=sigma_mu_bl, index=self.asset_names, columns=self.asset_names)
-        mu_bl = pd.DataFrame(data=mu_bl, index=self.asset_names, columns=['Expected Returns'])
+        mu_bl = pd.Series(data=mu_bl.flatten(), index=self.asset_names, name='Expected Returns')
 
         return mu_bl, sigma_mu_bl

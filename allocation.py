@@ -619,23 +619,42 @@ class BlackLitterman:
 
         where 'views_p' is a selection matrix and 'views_v' is a vector of values.
 
-        :param sigma: pandas.DataFrame, robustly estimated covariance matrix of the assets.
-        :param estimation_error: float, Uncertainty of the estimation. Recomended value is
-                                 the inverse of the sample size used in the covariance matrix.
-        :param views_p: pandas.DataFrame, selection matrix of the views.
-        :param views_v: pandas.DataFrame, value matrix of the views.  # TODO allow for pandas.Series
-        :param w_equilibrium: pandas.DataFrame, weights of each asset in the equilibrium
-        :param avg_risk_aversion: float, average risk aversion of the investors
-        :param mu_historical: pandas.DataFrame, historical returns of the asset class (can
-                              be interpreted as the target of the shrinkage estimate)
-        :param mu_shrink: float between 0 and 1, shirinkage intensity. If 1 (default),
-                          best guess of mu is the model returns. If 0, bet guess of mu
-                          is 'mu_historical'.  # TODO assert domain of 0 to 1
-        :param overall_confidence: float, the higher the number, the more weight the views have in te posterior
-        :param relative_uncertainty: pandas.DataFrame, the higher the value the less certain that view is.  # TODO allow for pandas series
-        """
+        Parameters
+        ----------
+        sigma : pandas.DataFrame
+            robustly estimated covariance matrix of the assets
 
-        self.sigma = sigma.sort_index(0).sort_index(1)
+        estimation_error : float
+            Uncertainty of the estimation. Recomended value is the inverse of the sample size
+            used in the covariance matrix
+
+        views_p : pandas.DataFrame
+            selection matrix of the views
+
+        views_v : pandas.DataFrame
+            value matrix of the views
+
+        w_equilibrium : pandas.DataFrame
+            weights of each asset in the equilibrium
+
+        avg_risk_aversion : float
+            average risk aversion of the investors
+
+        mu_historical : pandas.DataFrame
+            historical returns of the asset class (can be interpreted as the target
+            of the shrinkage estimate)
+
+        mu_shrink : float
+            between 0 and 1, shirinkage intensity. If 1 (default), best guess of mu
+            is the model returns. If 0, bet guess of mu is 'mu_historical'
+
+        overall_confidence : float
+            the higher the number, the more weight the views have in te posterior
+
+        relative_uncertainty : pandas.DataFrame
+            the higher the value the less certain that view is
+        """
+        self.sigma = sigma.sort_index(axis=0).sort_index(axis=1)
         self.asset_names = list(self.sigma.index)
         self.n_assets = sigma.shape[0]
         self.estimation_error = estimation_error
@@ -647,7 +666,7 @@ class BlackLitterman:
         self.mu_historical = self._get_mu_historical(mu_historical)
         self.mu_best_guess = self._get_mu_best_guess()
 
-        self.views_p = views_p.sort_index(0).sort_index(1)
+        self.views_p = views_p.sort_index(axis=0).sort_index(axis=1)
         self.views_v = views_v.sort_index()
         self.n_views = views_p.shape[0]
         self.view_names = list(self.views_p.index)

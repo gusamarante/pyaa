@@ -635,10 +635,6 @@ class BlackLitterman:
         :param relative_uncertainty: pandas.DataFrame, the higher the value the less certain that view is.  # TODO allow for pandas series
         """
 
-        # TODO assert input types (DataFrames)
-        # TODO assert input shapes and names
-        # TODO assert covariances are positive definite
-
         self.sigma = sigma.sort_index(0).sort_index(1)
         self.asset_names = list(self.sigma.index)
         self.n_assets = sigma.shape[0]
@@ -652,7 +648,7 @@ class BlackLitterman:
         self.mu_best_guess = self._get_mu_best_guess()
 
         self.views_p = views_p.sort_index(0).sort_index(1)
-        self.views_v = views_v.sort_index(0).sort_index(1)
+        self.views_v = views_v.sort_index()
         self.n_views = views_p.shape[0]
         self.view_names = list(self.views_p.index)
         self.overall_confidence = overall_confidence
@@ -684,9 +680,9 @@ class BlackLitterman:
         sigma = self.sigma.values
         w_equilibrium = self.w_equilibrium.values
         pi = 2 * self.avg_risk_aversion * sigma @ w_equilibrium
-        pi = pd.DataFrame(data=pi,
-                          index=self.asset_names,
-                          columns=['Equilibrium Returns'])
+        pi = pd.Series(data=pi,
+                       index=self.asset_names,
+                       name='Equilibrium Returns')
         return pi
 
     def _get_mu_historical(self, mu_historical):
@@ -708,10 +704,8 @@ class BlackLitterman:
         Uses shrinkage to estimate the best guess for mu by balancing between
         the model equilibrium returns and the historical returns.
         """
-        best_guess = self.mu_shrink * self.equilibrium_returns.values + (1-self.mu_shrink) * self.mu_historical.values
-        best_guess = pd.Series(data=best_guess.flatten(),
-                               index=self.asset_names,
-                               name='Best Guess of mu')
+        best_guess = self.mu_shrink * self.equilibrium_returns + (1-self.mu_shrink) * self.mu_historical
+        best_guess = best_guess.rename('Best Guess of mu')
         return best_guess
 
     def _get_relative_uncertainty(self, relative_uncertainty):
@@ -757,7 +751,7 @@ class BlackLitterman:
         tau = self.estimation_error
         sigma = self.sigma.values
         P = self.views_p.values
-        pi = self.mu_best_guess.values.reshape((-1, 1))
+        pi = self.mu_best_guess
         v = self.views_v.values
         omega = self.omega.values
 
@@ -766,6 +760,6 @@ class BlackLitterman:
         mu_bl = sigma_mu_bl @ B
 
         sigma_mu_bl = pd.DataFrame(data=sigma_mu_bl, index=self.asset_names, columns=self.asset_names)
-        mu_bl = pd.Series(data=mu_bl.flatten(), index=self.asset_names, name='Expected Returns')
+        mu_bl = pd.Series(data=mu_bl, index=self.asset_names, name='Expected Returns')
 
         return mu_bl, sigma_mu_bl

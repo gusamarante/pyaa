@@ -33,21 +33,21 @@ views_p = np.array([[1, 0, 0],
 views_p = pd.DataFrame(data=views_p, columns=asset_list, index=view_list)
 
 views_v = np.array([0.01, 0.025, 0.02])
-views_v = pd.DataFrame(data=views_v, index=view_list, columns=['View Values'])
+views_v = pd.Series(data=views_v, index=view_list, name='View Values')
 
 u = np.array([1, 1, 0.3])
 u = pd.DataFrame(data=u, index=view_list, columns=['Relative Uncertainty'])
 
 # best guess for mu
 w_equilibrium = np.array([1/3, 1/3, 1/3])
-w_equilibrium = pd.DataFrame(data=w_equilibrium, index=asset_list, columns=['Equilibrium Weights'])
+w_equilibrium = pd.Series(data=w_equilibrium, index=asset_list, name='Equilibrium Weights')
 
 mu_historical = np.array([0.013, 0.017, 0.016])
-mu_historical = pd.DataFrame(data=mu_historical, index=asset_list, columns=['Historical Returns'])
+mu_historical = pd.Series(data=mu_historical, index=asset_list, name='Historical Returns')
 
 bl = BlackLitterman(sigma=sigma,
                     estimation_error=tau,
-                    w_equilibrium=w_equilibrium,  # TODO make series
+                    w_equilibrium=w_equilibrium,
                     avg_risk_aversion=1.2,
                     mu_shrink=1,
                     views_p=views_p,

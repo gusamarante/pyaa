@@ -15,5 +15,4 @@ hrp = HRP(cov)
 hrp.plot_corr_matrix(show_chart=True,
                      save_path=file_path.joinpath('Figures/HRP Correlation Matrix.pdf'))
 hrp.plot_dendrogram(show_chart=True,
-                    save_path=file_path.joinpath('Figures/HRP Dendrogram.pdf'),
-                    )
+                    save_path=file_path.joinpath('Figures/HRP Dendrogram.pdf'))

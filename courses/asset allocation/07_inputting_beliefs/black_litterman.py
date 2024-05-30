@@ -9,7 +9,7 @@ file_path = Path(f"/Users/{getuser()}/Dropbox/Aulas/Insper - Asset Allocation")
 df = pd.read_excel(file_path.joinpath('Commodities Total Return.xlsx'), index_col=0)
 
 asset_list = ['Asset A', 'Asset B', 'Asset C']
-view_list = ['View 1', 'View 2', 'View 3']
+view_list = ['View 1', 'View 2']
 risk_free = 0.0075
 
 # Covariance of returns
@@ -27,22 +27,21 @@ sigma = pd.DataFrame(data=sigma, columns=asset_list, index=asset_list)
 # Views
 tau = 1/500
 
-views_p = np.array([[1, -1, 0],
-                    [0, 1, -1],
-                    [1, 0, -1]])
+views_p = np.array([[1, 0, 0],
+                    [0, 1, 0]])
 views_p = pd.DataFrame(data=views_p, columns=asset_list, index=view_list)
 
-views_v = np.array([0.01, 0.01, 0.01])
+views_v = np.array([0.01, 0.025])
 views_v = pd.DataFrame(data=views_v, index=view_list, columns=['View Values'])
 
-u = np.array([1, 1, 1])
+u = np.array([1, 1])
 u = pd.DataFrame(data=u, index=view_list, columns=['Relative Uncertainty'])
 
 # best guess for mu
 w_equilibrium = np.array([1/3, 1/3, 1/3])
 w_equilibrium = pd.DataFrame(data=w_equilibrium, index=asset_list, columns=['Equilibrium Weights'])
 
-mu_historical = np.array([0, 0, 0])
+mu_historical = np.array([0.013, 0.017, 0.016])
 mu_historical = pd.DataFrame(data=mu_historical, index=asset_list, columns=['Historical Returns'])
 
 bl = BlackLitterman(sigma=sigma,
@@ -75,11 +74,11 @@ ax = plt.subplot2grid((1, 1), (0, 0))
 # Assets
 ax.scatter(vol, bl.mu_best_guess, label='Original Assets', color='red', marker='o',
            edgecolor='black', s=65)
-ax.scatter(np.diag(bl.sigma_bl), bl.mu_bl, label='Black-Litterman Views', color='green', marker='p',
-           edgecolor='black')
+ax.scatter(np.diag(bl.sigma_bl)**0.5, bl.mu_bl, label='Black-Litterman Views', color='green', marker='p',
+           edgecolor='black', s=65)
 
 # risk-free
-ax.scatter(0, risk_free, label='Risk-Free')
+ax.scatter(0, risk_free, label='Risk-Free', edgecolor='black', s=65)
 
 # Optimal risky portfolio
 # plt.scatter(mkw_original.sigma_p, mkw_original.mu_p, label='Original Optimal', color='firebrick',

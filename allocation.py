@@ -737,7 +737,7 @@ class BlackLitterman:
         P = self.views_p.values
         Sigma = self.sigma.values
 
-        omega = (1/c) * u @ P @ Sigma @ P.T @ u
+        omega = (1 / c) * u @ P @ Sigma @ P.T @ u
 
         if np.linalg.det(omega) < np.finfo(float).eps:
             n, m = omega.shape

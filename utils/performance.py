@@ -36,7 +36,7 @@ class Performance(object):
 
         if skip_dd:
             self.drawdowns = None
-            self.max_dd = None
+            self.max_dd = (total_return / total_return.expanding().max()).min() - 1
         else:
             self.drawdowns = self._get_drawdowns()
             self.max_dd = self.drawdowns.groupby(level=0).min()['dd']

@@ -2,6 +2,8 @@ import pandas as pd
 from data.data_api import SGS
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
+from allocation import HRP
+from utils import Performance
 
 
 # ================
@@ -50,6 +52,13 @@ df_cum = pd.concat(df_cum, axis=1)
 df_cum.index = df_cum.index / 252
 
 
+# =======================
+# ===== Performance =====
+# =======================
+perf = Performance(df_trackers, skip_dd=True)
+a = 1
+
+
 # ===========================================
 # ===== Chart - Cumulative ERI Together =====
 # ===========================================
@@ -71,6 +80,11 @@ plt.tight_layout()
 plt.show()
 plt.close()
 
-# TODO performance from the start
-# TODO Correlation Linkage
-# TODO Performance Table
+
+# ============================================
+# ===== Chart - Correlation + Dendrogram =====
+# ============================================
+cov = df_trackers.dropna().pct_change(21).cov()
+hrp = HRP(cov)
+hrp.plot_dendrogram()
+hrp.plot_corr_matrix()

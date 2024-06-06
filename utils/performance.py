@@ -262,7 +262,7 @@ class Performance(object):
         df.loc['Sortino'] = self.sortino
         df.loc['Max DD'] = self.max_dd
 
-        if skip_dd:
+        if not skip_dd:
             df.loc['DD 5%q'] = self.drawdowns.reset_index().groupby('level_0').quantile(0.05)['dd']
 
         df.loc['Start Date'] = self.start_date

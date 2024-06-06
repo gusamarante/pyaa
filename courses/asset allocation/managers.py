@@ -34,6 +34,7 @@ for fund in df.columns:
 df_xr = pd.concat(df_xr, axis=1)
 df_trackers = (1 + df_xr).cumprod()
 df_trackers = df_trackers / df_trackers.bfill().iloc[0]
+df_trackers = df_trackers.dropna(how='all')
 
 df_trackers.to_clipboard()
 

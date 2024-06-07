@@ -29,8 +29,10 @@ df = df.rename(names, axis=1)
 df = df.dropna(how='all').ffill()
 
 # CDI
-cdi = SGS().fetch({12: "CDI"})
-cdi = cdi["CDI"] / 100
+cdi = pd.read_excel(f"/Users/{getuser()}/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx",
+                    sheet_name='PX_LAST', skiprows=3, index_col=0)
+cdi.index = pd.to_datetime(cdi.index)
+cdi = cdi["BZDIOVER Index"] / 100
 
 # Excess Returns of the Hedge Funds
 df_xr = []
@@ -59,6 +61,11 @@ filepath = f'/Users/{getuser()}/PycharmProjects/pyaa/trackers/output data/tracke
 ntnb = pd.read_excel(filepath, index_col=0)
 ntnb = ntnb['NTNB 20y'].dropna()
 
+# --- NTNF ---
+filepath = f'/Users/{getuser()}/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx'  # mac
+ntnf = pd.read_excel(filepath, index_col=0)
+ntnf = ntnf['NTNF 7y'].dropna()
+
 # --- IVVB ---
 filepath = f'/Users/{getuser()}/Dropbox/Personal Portfolio/data/ETFs.xlsx'  # mac
 ivvb = pd.read_excel(filepath, index_col=0, sheet_name='values')
@@ -70,14 +77,15 @@ ida = pd.read_excel(filepath, index_col=0, sheet_name='Sheet2')
 ida = ida['IDADIPCA Index'].rename('IDA').dropna()
 
 
-df_assets = pd.concat([ivvb, ntnb, ida], axis=1).dropna(how='all')
+df_assets = pd.concat([ntnf, ntnb, ivvb, ida], axis=1).dropna(how='all')
 
 
 # ====================
 # ===== Backtest =====
 # ====================
 backtest = pd.Series(name='Backtest')
-df_vols = df_assets.pct_change(21).rolling(252).std() * np.sqrt(12)
+# df_vols = df_assets.pct_change(21).rolling(252).std() * np.sqrt(12)  # Traditional
+df_vols = df_assets.pct_change(21).ewm(com=252).std() * np.sqrt(12)  # EWM
 notional_start = 100
 
 # We compute weights every day beacause it is easy, but we are only going to use them on rebalance dates.
@@ -100,6 +108,7 @@ for d, dm1 in tqdm(dates2loop, "Backtesting"):
 
     if d >= next_rebal:
         holdings.loc[d] = (inv_vol_weights.loc[dm1] * backtest.loc[d]) / df_assets.loc[d]
+        next_rebal = d + pd.offsets.DateOffset(months=3)
     else:
         holdings.loc[d] = holdings.loc[dm1]
 
@@ -111,8 +120,12 @@ backtest = backtest.dropna().cumprod()
 backtest.plot()
 plt.show()
 
+holdings.plot()
+plt.show()
+
 perf_port = Performance(backtest.to_frame('Simple'), skip_dd=True)
 print(perf_port.table)
+
 
 # =======================
 # ===== Performance =====
@@ -148,3 +161,8 @@ cov = df_trackers.dropna().pct_change(21).cov()
 hrp = HRP(cov)
 hrp.plot_dendrogram()
 hrp.plot_corr_matrix()
+
+# TODO Incluir trajetória no gráfico com HFs opacos
+# TODO Calcular correlações com os HFs
+# TODO percentual de HFs de quem o portfolio ganha
+# TODO Percentual de anos que um HF ganha do Fundo

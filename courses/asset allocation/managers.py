@@ -7,7 +7,7 @@ from allocation import HRP
 from utils import Performance
 from pathlib import Path
 from getpass import getuser
-import numpy as np
+from tqdm import tqdm
 
 
 # ================
@@ -17,7 +17,7 @@ import numpy as np
 names = pd.read_excel(f"/Users/{getuser()}/Dropbox/Personal Portfolio/data/Gestores.xlsx",
                       sheet_name='Tickers', index_col=0)
 names = names['Fund Name']
-for term in [' FIC ', ' FIM ', ' FI ', ' MULT ', ' LP ']:
+for term in [' FIC ', ' FIM ', ' FIM', ' MULT', ' MUL', ' FI ', ' MULT ', ' LP ']:
     names = names.str.replace(term, ' ')
 
 
@@ -60,12 +60,12 @@ ntnb = pd.read_excel(filepath, index_col=0)
 ntnb = ntnb['NTNB 20y'].dropna()
 
 # --- IVVB ---
-filepath = f'/Users/{getuser()}/Library/CloudStorage/Dropbox/Personal Portfolio/data/ETFs.xlsx'  # mac
+filepath = f'/Users/{getuser()}/Dropbox/Personal Portfolio/data/ETFs.xlsx'  # mac
 ivvb = pd.read_excel(filepath, index_col=0, sheet_name='values')
 ivvb = ivvb['IVVB11 BZ Equity'].rename('IVVB').dropna()
 
 # --- IDA ---
-filepath = f'/Users/{getuser()}/Library/CloudStorage/Dropbox/Personal Portfolio/data/IDA Anbima.xlsx'  # mac
+filepath = f'/Users/{getuser()}/Dropbox/Personal Portfolio/data/IDA Anbima.xlsx'  # mac
 ida = pd.read_excel(filepath, index_col=0, sheet_name='Sheet2')
 ida = ida['IDADIPCA Index'].rename('IDA').dropna()
 
@@ -76,12 +76,43 @@ df_assets = pd.concat([ivvb, ntnb, ida], axis=1).dropna(how='all')
 # ====================
 # ===== Backtest =====
 # ====================
-df_vols = df_assets.pct_change(1).rolling(252).std() * np.sqrt(252)
-inv_vol_weights = (1/df_vols).div((1/df_vols).sum(axis=1), axis=0)
+backtest = pd.Series(name='Backtest')
+df_vols = df_assets.pct_change(21).rolling(252).std() * np.sqrt(12)
+notional_start = 100
+
+# We compute weights every day beacause it is easy, but we are only going to use them on rebalance dates.
+inv_vol_weights = (1/df_vols).div((1/df_vols).sum(axis=1), axis=0)  # Traditional
 inv_vol_weights = inv_vol_weights.dropna(how='all')
 
-# TODO parei aqui, montar total return do portfolio de InvVol
+# Initial position
+start_date = inv_vol_weights.index[0]
 
+holdings = pd.DataFrame(columns=df_assets.columns)
+holdings.loc[start_date] = (inv_vol_weights.loc[start_date] * notional_start) / df_assets.loc[start_date]
+
+backtest.loc[start_date] = notional_start
+next_rebal = start_date + pd.offsets.DateOffset(months=3)
+
+dates2loop = zip(inv_vol_weights.index[1:], inv_vol_weights.index[:-1])
+for d, dm1 in tqdm(dates2loop, "Backtesting"):
+    pnl = (df_assets.diff(1).loc[d] * holdings.loc[dm1]).sum()
+    backtest.loc[d] = backtest.loc[dm1] + pnl
+
+    if d >= next_rebal:
+        holdings.loc[d] = (inv_vol_weights.loc[dm1] * backtest.loc[d]) / df_assets.loc[d]
+    else:
+        holdings.loc[d] = holdings.loc[dm1]
+
+
+backtest = (1 + backtest.pct_change(1) - cdi)
+backtest.loc[start_date] = notional_start
+backtest = backtest.dropna().cumprod()
+
+backtest.plot()
+plt.show()
+
+perf_port = Performance(backtest.to_frame('Simple'), skip_dd=True)
+print(perf_port.table)
 
 # =======================
 # ===== Performance =====

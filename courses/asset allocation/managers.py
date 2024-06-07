@@ -1,16 +1,20 @@
+import numpy as np
 import pandas as pd
 from data.data_api import SGS
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from allocation import HRP
 from utils import Performance
+from pathlib import Path
+from getpass import getuser
+import numpy as np
 
 
 # ================
 # ===== DATA =====
 # ================
 # Read the Names
-names = pd.read_excel(r"C:\Users\gamarante\Dropbox\Personal Portfolio\data\Gestores.xlsx",
+names = pd.read_excel(f"/Users/{getuser()}/Dropbox/Personal Portfolio/data/Gestores.xlsx",
                       sheet_name='Tickers', index_col=0)
 names = names['Fund Name']
 for term in [' FIC ', ' FIM ', ' FI ', ' MULT ', ' LP ']:
@@ -18,7 +22,7 @@ for term in [' FIC ', ' FIM ', ' FI ', ' MULT ', ' LP ']:
 
 
 # Read Managers
-df = pd.read_excel(r"C:\Users\gamarante\Dropbox\Personal Portfolio\data\Gestores.xlsx",
+df = pd.read_excel(f"/Users/{getuser()}/Dropbox/Personal Portfolio/data/Gestores.xlsx",
                    sheet_name='BBG', skiprows=3, index_col=0)
 df.index = pd.to_datetime(df.index)
 df = df.rename(names, axis=1)
@@ -28,7 +32,7 @@ df = df.dropna(how='all').ffill()
 cdi = SGS().fetch({12: "CDI"})
 cdi = cdi["CDI"] / 100
 
-# Excess Returns
+# Excess Returns of the Hedge Funds
 df_xr = []
 for fund in df.columns:
     ret = df[fund].pct_change(1).dropna()
@@ -42,7 +46,6 @@ df_trackers = df_trackers.dropna(how='all')
 
 df_trackers.to_clipboard()
 
-
 # All cumulative ERI
 df_cum = []
 for fund in df_trackers.columns:
@@ -51,12 +54,39 @@ for fund in df_trackers.columns:
 df_cum = pd.concat(df_cum, axis=1)
 df_cum.index = df_cum.index / 252
 
+# --- NTNB ---
+filepath = f'/Users/{getuser()}/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx'  # mac
+ntnb = pd.read_excel(filepath, index_col=0)
+ntnb = ntnb['NTNB 20y'].dropna()
+
+# --- IVVB ---
+filepath = f'/Users/{getuser()}/Library/CloudStorage/Dropbox/Personal Portfolio/data/ETFs.xlsx'  # mac
+ivvb = pd.read_excel(filepath, index_col=0, sheet_name='values')
+ivvb = ivvb['IVVB11 BZ Equity'].rename('IVVB').dropna()
+
+# --- IDA ---
+filepath = f'/Users/{getuser()}/Library/CloudStorage/Dropbox/Personal Portfolio/data/IDA Anbima.xlsx'  # mac
+ida = pd.read_excel(filepath, index_col=0, sheet_name='Sheet2')
+ida = ida['IDADIPCA Index'].rename('IDA').dropna()
+
+
+df_assets = pd.concat([ivvb, ntnb, ida], axis=1).dropna(how='all')
+
+
+# ====================
+# ===== Backtest =====
+# ====================
+df_vols = df_assets.pct_change(1).rolling(252).std() * np.sqrt(252)
+inv_vol_weights = (1/df_vols).div((1/df_vols).sum(axis=1), axis=0)
+inv_vol_weights = inv_vol_weights.dropna(how='all')
+
+# TODO parei aqui, montar total return do portfolio de InvVol
+
 
 # =======================
 # ===== Performance =====
 # =======================
 perf = Performance(df_trackers, skip_dd=True)
-a = 1
 
 
 # ===========================================
@@ -73,7 +103,6 @@ ax.set_yscale('log')
 ax.set_ylabel("Index (log-scale)")
 ax.set_xlabel("Years since start of series")
 ax.get_yaxis().set_major_formatter(ScalarFormatter())
-
 
 plt.tight_layout()
 

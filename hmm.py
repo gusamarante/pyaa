@@ -10,11 +10,8 @@ import pandas as pd
 import numpy as np
 
 
-class GaussianHMM(object):
+class GaussianHMM:
     # TODO Documentation
-    #      - format is focused in finance
-    #      - kind of a wrapper for DFs
-    #      - our interests
     #      - instability of the estimator
 
     # TODO plot methods
@@ -22,19 +19,146 @@ class GaussianHMM(object):
     #      - Forecast of states (based on current and on probabilities)
     #      - Simulate returns
 
-    predicted_state = None
-    state_selection = None
-    stationary_dist = None
-    avg_duration = None
-    state_probs = None
-    state_freq = None
-    trans_mat = None
-    n_states = None
-    covars = None
     score = None
-    corrs = None
+    aic = None
+    bic = None
+    trans_mat = None
+    n_regimes = None
+    avg_duration = None
+    stationary_dist = None
     means = None
     vols = None
+    covars = None
+    corrs = None
+    predicted_state = None
+    state_freq = None
+    state_probs = None
+
+    def __init__(self, returns):
+        self.returns = returns
+        self.n_var = returns.shape[1]
+
+    def select_order(self, max_regimes=8, select_iter=100, show_chart=False):
+        # TODO Documentation
+        df_select = pd.DataFrame()
+        ns_range = range(2, max_regimes + 1)
+        for ns in tqdm(ns_range, 'Computing scores for different number of regimes'):
+            model = hmm.GaussianHMM(n_components=ns,
+                                    covariance_type='full',
+                                    n_iter=select_iter)
+            model.fit(self.returns)
+            df_select.loc[ns, "LogL"] = model.score(self.returns)
+            df_select.loc[ns, "AIC"] = model.aic(self.returns)
+            df_select.loc[ns, "BIC"] = model.bic(self.returns)
+
+        if show_chart:
+            fig, ax = plt.subplots()
+            ln1 = ax.plot(ns_range, df_select['AIC'], label="AIC", color="blue", marker="o")
+            ln2 = ax.plot(ns_range, df_select['BIC'], label="BIC", color="green", marker="o")
+            ax2 = ax.twinx()
+            ln3 = ax2.plot(ns_range, df_select['LogL'], label="LogL", color="orange", marker="o")
+
+            ax.legend(handles=ax.lines + ax2.lines)
+            ax.set_title("Using AIC/BIC for Model Selection")
+            ax.set_ylabel("Criterion Value (lower is better)")
+            ax2.set_ylabel("LL (higher is better)")
+            ax.set_xlabel("Number of HMM Components")
+            fig.tight_layout()
+            plt.show()
+
+        ll = df_select.idxmax()['LogL']
+        aic = df_select.idxmin()['AIC']
+        bic = df_select.idxmin()['BIC']
+
+        return round((ll + aic + bic) / 3)
+
+    def fit(self, n_regimes=None, select_iter=100):
+
+        if n_regimes is None:
+            n_regimes = self.select_order(
+                show_chart=False,
+                max_regimes=6,  # Forces a parsimonious choice
+                select_iter=1000,
+            )
+
+        self.n_regimes = n_regimes
+        model = hmm.GaussianHMM(n_components=n_regimes,
+                                covariance_type='full',
+                                n_iter=select_iter)
+        model.fit(self.returns)
+        sort_order = np.flip(np.argsort(np.diag(model.transmat_)))
+        sorted_model = hmm.GaussianHMM(n_components=n_regimes,
+                                       covariance_type='full')
+
+        sorted_model.startprob_ = model.startprob_[sort_order]
+        sorted_model.transmat_ = pd.DataFrame(model.transmat_).loc[sort_order, sort_order].values
+        sorted_model.means_ = model.means_[sort_order, :]
+        sorted_model.covars_ = model.covars_[sort_order, :, :]
+
+        self.score = sorted_model.score(self.returns)
+        self.aic = sorted_model.aic(self.returns)
+        self.bic = sorted_model.bic(self.returns)
+        self.trans_mat = pd.DataFrame(
+            data=sorted_model.transmat_,
+            index=[f'From State {s + 1}' for s in range(self.n_regimes)],
+            columns=[f'To State {s + 1}' for s in range(self.n_regimes)],
+        )
+        self.avg_duration = pd.Series(
+            data=1 / (1 - np.diag(sorted_model.transmat_)),
+            index=[f'State {s + 1}' for s in range(self.n_regimes)],
+            name='Average Duration',
+        )
+        self.stationary_dist = pd.Series(
+            data=sorted_model.get_stationary_distribution(),
+            index=[f'State {s + 1}' for s in range(self.n_regimes)],
+            name='Stationary Distribution of States',
+        )
+        self.means = pd.DataFrame(
+            data=sorted_model.means_,
+            index=[f'State {s + 1}' for s in range(self.n_regimes)],
+            columns=self.returns.columns,
+        )
+        vol_data = [list(np.sqrt(np.diag(sorted_model.covars_[ss]))) for ss in range(self.n_regimes)]
+        self.vols = pd.DataFrame(
+            data=vol_data,
+            columns=self.returns.columns,
+            index=[f'State {s + 1}' for s in range(self.n_regimes)],
+        )
+        idx = pd.MultiIndex.from_product(
+            [
+                [f'State {s + 1}' for s in range(self.n_regimes)],
+                self.returns.columns,
+            ]
+        )
+        self.covars = pd.DataFrame(
+            index=idx,
+            columns=self.returns.columns,
+            data=sorted_model.covars_.reshape(-1, self.n_var),
+        )
+        corr_data = [cov2corr(sorted_model.covars_[ss])[0] for ss in range(self.n_regimes)]
+        self.corrs = pd.DataFrame(
+            index=idx,
+            columns=self.returns.columns,
+            data=np.concatenate(corr_data),
+        )
+        self.predicted_state = pd.Series(
+            data=sorted_model.predict(self.returns) + 1,
+            index=self.returns.index,
+            name='Predicted State',
+        )
+        freq_data = ('State ' + self.predicted_state.astype(str)).value_counts() / self.predicted_state.count()
+        self.state_freq = pd.Series(
+            data=freq_data,
+            index=[f'State {s + 1}' for s in range(self.n_regimes)],
+            name='State Frequency',
+        )
+        self.state_probs = pd.DataFrame(
+            data=sorted_model.predict_proba(self.returns),
+            index=self.returns.index,
+            columns=[f'State {s + 1}' for s in range(self.n_regimes)])
+
+
+class GaussianHMMOld:
 
     def __init__(self, returns):
         self.returns = returns

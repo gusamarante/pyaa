@@ -34,9 +34,11 @@ class GaussianHMM:
     state_freq = None
     state_probs = None
 
-    def __init__(self, returns):
+    def __init__(self, returns, seed=None):
         self.returns = returns
         self.n_var = returns.shape[1]
+        if seed is not None:
+            np.random.seed(seed)
 
     def select_order(self, max_regimes=8, select_iter=100, show_chart=False):
         # TODO Documentation
@@ -156,6 +158,68 @@ class GaussianHMM:
             data=sorted_model.predict_proba(self.returns),
             index=self.returns.index,
             columns=[f'State {s + 1}' for s in range(self.n_regimes)])
+
+    def plot_series(self, data, log_scale=False):
+        white = Color("white")
+        red = Color("red")
+        colors = list(white.range_to(red, self.n_regimes))
+
+        mindt, maxdt = min(self.predicted_state.index), max(self.predicted_state.index)
+        data = data[data.index >= mindt]
+        data = data[data.index <= maxdt]
+
+        if isinstance(data, pd.Series):
+
+            data = data.reindex(self.returns.index)
+            ax = data.plot(title=data.name)
+
+            for st in range(self.n_regimes):
+                dates = self.predicted_state[self.predicted_state == st + 1].index
+                for dt in dates:
+                    ax.axvspan(dt - pd.tseries.offsets.MonthBegin(),
+                               dt + pd.tseries.offsets.MonthEnd(),
+                               alpha=0.3, color=colors[st].hex, lw=0)
+
+            if log_scale:
+                ax.set_yscale('log')
+
+        else:
+            # TODO support for DataFrames
+            pass
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot_densities(self):
+
+        n_subplots = self.n_var
+        n_rows = int(np.floor(np.sqrt(n_subplots)))
+        n_cols = int(np.ceil(n_subplots / n_rows))
+        n_bins = int(np.ceil(np.sqrt(self.returns.shape[0])))
+
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(10, 8))
+
+        for ax, asset in zip(axes.ravel(), list(self.returns.columns)):
+            ax.set_title(asset)
+
+            ax.hist(self.returns[asset], bins=n_bins, density=True, color='grey', alpha=0.3)
+            xmin, xmax = ax.get_xlim()
+            rangex = np.linspace(xmin, xmax, 100)
+            mix_density = np.zeros(100)
+
+            for state in range(self.n_regimes):
+                mean = self.means[asset].iloc[state]
+                std = self.vols[asset].iloc[state]
+                density = self.stationary_dist.iloc[state] * norm(loc=mean, scale=std).pdf(rangex)
+                mix_density = mix_density + density
+                ax.plot(rangex, density, label=f'State {state + 1}', lw=1)
+
+            ax.plot(rangex, mix_density, label='Mixture', lw=2)
+
+        axes[0, 0].legend(loc='best')
+
+        plt.tight_layout()
+        plt.show()
 
 
 class GaussianHMMOld:

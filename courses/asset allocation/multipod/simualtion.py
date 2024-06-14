@@ -25,19 +25,24 @@ import matplotlib.pyplot as plt
 sharpe = 0.8
 vol = 0.04
 rf = 0.05
-n_pods = 5
+n_pods = 10
 rho = 0.1
 n_periods = 1
 pfee_pods = 0.18
-leverage = 4
+leverage = 5
 admin_fee = 0.016
-admin_pfee = 0.12
+pfee_admin = 0.12
+simulations = 1000
 
 mu = rf + vol * sharpe
 mu = mu * np.ones(n_pods)
 
 corr_mat = np.eye(n_pods) * (1 - rho) + np.ones((n_pods, n_pods)) * rho
 cov_mat = np.diag(vol * np.ones(n_pods)) @ corr_mat @ np.diag(vol * np.ones(n_pods))
+inv_c = np.linalg.inv(corr_mat)
+
+iota = np.ones(n_pods)
+max_sharpe = sharpe * np.sqrt(iota @ inv_c @ iota)
 
 
 def multivariate_t_rvs(m, S, df=np.inf, n_simul=1):
@@ -71,31 +76,45 @@ def multivariate_t_rvs(m, S, df=np.inf, n_simul=1):
     return m + z / np.sqrt(x)[:, None]
 
 
-# Sample the returns
-rets = multivariate_t_rvs(mu, cov_mat, 10, n_periods)
-trackers = np.vstack([np.ones((1, n_pods)), 1 + rets])
-trackers = trackers.cumprod(axis=0)
-trackers = pd.DataFrame(data=trackers,
-                        columns=[f"Pod {p+1}" for p in range(n_pods)])
-trackers.plot(legend=False)
+df_simuls = pd.DataFrame()
+for ss in tqdm(range(simulations)):
+
+    # Sample the returns
+    rets = multivariate_t_rvs(mu, cov_mat, 10, n_periods)
+    trackers = np.vstack([np.ones((1, n_pods)), 1 + rets])
+    trackers = trackers.cumprod(axis=0)
+    trackers = pd.DataFrame(data=trackers,
+                            columns=[f"Pod {p+1}" for p in range(n_pods)])
+
+    bonus_pods = np.maximum(trackers.diff(1) - trackers.shift(1) * rf, 0) * pfee_pods
+    quota_gross = trackers.sum(axis=1)
+
+    quota_after_podfee = (trackers.diff(1) - trackers.shift(1) * rf).sum(axis=1) * leverage
+    quota_after_podfee.iloc[0] = quota_gross.iloc[0]
+    quota_after_podfee = quota_after_podfee.cumsum()
+
+    admin_cost = quota_gross.shift(1) * admin_fee
+    bonus_admin = np.maximum(quota_after_podfee.diff(1) - quota_after_podfee.shift(1) * rf, 0) * pfee_admin
+    quota_net = quota_after_podfee.diff(1) - admin_cost - bonus_admin
+    quota_net.iloc[0] = quota_gross.iloc[0]
+    quota_net = quota_net.cumsum()
+
+    # quotas = pd.concat(
+    #     [
+    #         quota_gross.rename('Gross'),
+    #         quota_after_podfee.rename('After Pod Fees'),
+    #         quota_net.rename('Net'),
+    #     ],
+    #     axis=1,
+    # )
+
+    df_simuls.loc[ss, 'Pods Avg Sharpe'] = ((trackers.pct_change(1) - rf) / vol).mean(axis=1).iloc[-1]
+
+    w = (1/n_pods) * np.ones(n_pods)
+    quota_vol = np.sqrt(w.T @ cov_mat @ w) * leverage
+    df_simuls.loc[ss, 'Net Sharpe'] = (quota_net.pct_change(1) / quota_vol).iloc[-1]
+
+
+df_simuls.plot(kind='hist', alpha=0.4)
 plt.show()
 
-bonus_pods = np.maximum(trackers.diff(1) - trackers.shift(1) * rf, 0) * pfee_pods
-quota_gross = trackers.sum(axis=1)
-
-quota_after_podfee = (trackers.diff(1) - trackers.shift(1) * rf).sum(axis=1) * leverage
-quota_after_podfee.iloc[0] = quota_gross.iloc[0]
-quota_after_podfee = quota_after_podfee.cumsum()
-
-admin_cost = quota_gross.shift(1) * admin_fee
-bonus_admin = np.maximum(quota_after_podfee.diff(1) - quota_after_podfee.shift(1) * rf, 0) * admin_pfee
-quota_net = quota_after_podfee.diff(1) - admin_cost - bonus_admin
-quota_net.iloc[0] = quota_gross.iloc[0]
-quota_net = quota_net.cumsum()
-
-quotas = pd.concat([quota_gross.rename('Gross'), quota_after_podfee.rename('After Pod Fees'), quota_net.rename('Net')], axis=1)
-
-quotas.plot()
-plt.show()
-
-# TODO Now I have the trajectories, compute performances and fees

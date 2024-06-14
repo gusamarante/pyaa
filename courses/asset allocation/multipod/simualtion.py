@@ -32,7 +32,7 @@ pfee_pods = 0.18
 leverage = 1
 admin_fee = 0.016
 pfee_admin = 0.12
-simulations = 100
+simulations = 5000
 
 mu = rf + vol * sharpe
 mu = mu * np.ones(n_pods)
@@ -93,8 +93,8 @@ for ss in tqdm(range(simulations)):
     quota_after_podfee.iloc[0] = quota_gross.iloc[0]
     quota_after_podfee = quota_after_podfee.cumsum()
 
-    admin_cost = quota_gross.shift(1) * admin_fee
-    bonus_admin = np.maximum(quota_after_podfee.diff(1) - quota_after_podfee.shift(1) * rf, 0) * pfee_admin  # TODO conta
+    admin_cost = quota_after_podfee.shift(1) * admin_fee
+    bonus_admin = np.maximum(quota_after_podfee.diff(1) - quota_after_podfee.shift(1) * rf, 0) * pfee_admin
     quota_net = quota_after_podfee.diff(1) - admin_cost - bonus_admin
     quota_net.iloc[0] = quota_gross.iloc[0]
     quota_net = quota_net.cumsum()

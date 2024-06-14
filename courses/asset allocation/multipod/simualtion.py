@@ -22,12 +22,16 @@ import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-sharpe = 0.5
+sharpe = 0.8
 vol = 0.04
 rf = 0.05
-n_pods = 10
-rho = 0
-n_periods = 10
+n_pods = 5
+rho = 0.1
+n_periods = 1
+pfee_pods = 0.18
+leverage = 4
+admin_fee = 0.016
+admin_pfee = 0.12
 
 mu = rf + vol * sharpe
 mu = mu * np.ones(n_pods)
@@ -73,9 +77,25 @@ trackers = np.vstack([np.ones((1, n_pods)), 1 + rets])
 trackers = trackers.cumprod(axis=0)
 trackers = pd.DataFrame(data=trackers,
                         columns=[f"Pod {p+1}" for p in range(n_pods)])
-trackers.plot()
+trackers.plot(legend=False)
 plt.show()
 
-trackers.to_clipboard()
+bonus_pods = np.maximum(trackers.diff(1) - trackers.shift(1) * rf, 0) * pfee_pods
+quota_gross = trackers.sum(axis=1)
+
+quota_after_podfee = (trackers.diff(1) - trackers.shift(1) * rf).sum(axis=1) * leverage
+quota_after_podfee.iloc[0] = quota_gross.iloc[0]
+quota_after_podfee = quota_after_podfee.cumsum()
+
+admin_cost = quota_gross.shift(1) * admin_fee
+bonus_admin = np.maximum(quota_after_podfee.diff(1) - quota_after_podfee.shift(1) * rf, 0) * admin_pfee
+quota_net = quota_after_podfee.diff(1) - admin_cost - bonus_admin
+quota_net.iloc[0] = quota_gross.iloc[0]
+quota_net = quota_net.cumsum()
+
+quotas = pd.concat([quota_gross.rename('Gross'), quota_after_podfee.rename('After Pod Fees'), quota_net.rename('Net')], axis=1)
+
+quotas.plot()
+plt.show()
 
 # TODO Now I have the trajectories, compute performances and fees

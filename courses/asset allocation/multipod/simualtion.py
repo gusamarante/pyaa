@@ -29,10 +29,10 @@ n_pods = 10
 rho = 0.1
 n_periods = 1
 pfee_pods = 0.18
-leverage = 5
+leverage = 1
 admin_fee = 0.016
 pfee_admin = 0.12
-simulations = 1000
+simulations = 100
 
 mu = rf + vol * sharpe
 mu = mu * np.ones(n_pods)
@@ -94,7 +94,7 @@ for ss in tqdm(range(simulations)):
     quota_after_podfee = quota_after_podfee.cumsum()
 
     admin_cost = quota_gross.shift(1) * admin_fee
-    bonus_admin = np.maximum(quota_after_podfee.diff(1) - quota_after_podfee.shift(1) * rf, 0) * pfee_admin
+    bonus_admin = np.maximum(quota_after_podfee.diff(1) - quota_after_podfee.shift(1) * rf, 0) * pfee_admin  # TODO conta
     quota_net = quota_after_podfee.diff(1) - admin_cost - bonus_admin
     quota_net.iloc[0] = quota_gross.iloc[0]
     quota_net = quota_net.cumsum()
@@ -109,12 +109,20 @@ for ss in tqdm(range(simulations)):
     # )
 
     df_simuls.loc[ss, 'Pods Avg Sharpe'] = ((trackers.pct_change(1) - rf) / vol).mean(axis=1).iloc[-1]
+    # df_simuls.loc[ss, 'Port of Pods Sharpe'] = max_sharpe
 
     w = (1/n_pods) * np.ones(n_pods)
     quota_vol = np.sqrt(w.T @ cov_mat @ w) * leverage
     df_simuls.loc[ss, 'Net Sharpe'] = (quota_net.pct_change(1) / quota_vol).iloc[-1]
 
 
-df_simuls.plot(kind='hist', alpha=0.4)
-plt.show()
+# df_simuls.plot(kind='hist', alpha=0.4)
+# plt.show()
+#
+# (df_simuls['Net Sharpe'] / max_sharpe).plot(kind='hist', alpha=0.4, bins=50)
+# plt.show()
+
+print("Mean", (df_simuls['Net Sharpe'] / max_sharpe).mean())
+print("Mean", (df_simuls['Net Sharpe'] / max_sharpe).median())
+
 

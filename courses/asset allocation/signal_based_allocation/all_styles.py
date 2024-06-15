@@ -56,6 +56,7 @@ for d, dm1 in tqdm(dates2loop, "Fama-French Style"):
     if d >= next_roll_date:
         weights = fama_french(carry.loc[dm1])
         holdings = backtest_ff.loc[d] * weights / trackers.loc[d]
+        next_roll_date = d + pd.offsets.DateOffset(months=3)
 
 
 # =========================
@@ -63,7 +64,6 @@ for d, dm1 in tqdm(dates2loop, "Fama-French Style"):
 # =========================
 # TODO turn this into a function/class
 def rank_weighted(signal):
-    signal = signal.sort_values()
     c = (signal.rank() - signal.rank().mean()).abs().sum() / 2
     w = (signal.rank() - signal.rank().mean()) * (1 / c)
     return w
@@ -85,6 +85,7 @@ for d, dm1 in tqdm(dates2loop, "Rank Weighted"):
     if d >= next_roll_date:
         weights = rank_weighted(carry.loc[dm1])
         holdings = backtest_rank.loc[d] * weights / trackers.loc[d]
+        next_roll_date = d + pd.offsets.DateOffset(months=3)
 
 
 # ===========================
@@ -125,6 +126,7 @@ for d, dm1 in tqdm(dates2loop, "Z-Score"):
         weights_win = zscore_weights(carry.loc[dm1], winsor=True)
         holdings_nowin = backtest_zscore_nowin.loc[d] * weights_nowin / trackers.loc[d]
         holdings_win = backtest_zscore_win.loc[d] * weights_win / trackers.loc[d]
+        next_roll_date = d + pd.offsets.DateOffset(months=3)
 
 
 # ===================================
@@ -155,22 +157,22 @@ for d, dm1 in tqdm(dates2loop, "Directional + InvVol"):
     if d >= next_roll_date:
         weights = direction_invvol(carry.loc[dm1], vols.loc[dm1])
         holdings = backtest_div.loc[d] * weights / trackers.loc[d]
+        next_roll_date = d + pd.offsets.DateOffset(months=3)
 
 
 # ============================
 # ===== Maximum Exposure =====
 # ============================
 # TODO turn this into a function/class
-def max_exposure(signal, covariance, c=1, target_vol=0.1):
+def max_exposure(signal, covariance, c=0.4, target_vol=0.1):
 
-    constraints = ({'type': 'eq',
+    constraints = ({'type': 'ineq',
                     'fun': lambda x: np.sqrt(x.T @ covariance @ x) - target_vol})
 
     bounds = Bounds(- c * np.ones(signal.shape[0]), c * np.ones(signal.shape[0]))
 
-
     # Run optimization
-    res = minimize(lambda x: x.T @ signal,
+    res = minimize(lambda x: -x.T @ signal,
                    np.zeros(signal.shape[0]),
                    method='SLSQP',
                    constraints=constraints,
@@ -196,6 +198,7 @@ for d, dm1 in tqdm(dates2loop, "Maximum Exposure"):
     if d >= next_roll_date:
         weights = max_exposure(carry.loc[dm1], covar.loc[dm1])
         holdings = backtest_maxexp.loc[d] * weights / trackers.loc[d]
+        next_roll_date = d + pd.offsets.DateOffset(months=3)
 
 
 # ====================

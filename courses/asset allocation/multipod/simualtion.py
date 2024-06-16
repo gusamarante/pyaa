@@ -65,10 +65,10 @@ def multivariate_t_rvs(m, S, df=np.inf, n_simul=1):
 
 
 df_scenarios = []
-for n_pods in [1, 5]:
-    for leverage in [1, 5]:
-        for sharpe in [0.2, 0.8]:
-            for rho in [0, 0.1, 0.5]:
+for n_pods in [1, 3, 5, 10, 15, 20]:
+    for leverage in [1, 3, 5, 7]:
+        for sharpe in [0, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5]:
+            for rho in [0, 0.1, 0.25, 0.5, 0.75, 0.9]:
 
                 # Given all parameter compute static moments
                 mu = rf + vol * sharpe
@@ -132,3 +132,5 @@ df_scenarios = df_scenarios.T
 
 print(df_scenarios)
 df_scenarios.to_clipboard()
+
+df_scenarios.to_csv("/Users/gustavoamarante/Library/CloudStorage/Dropbox/multipod DATA.csv")

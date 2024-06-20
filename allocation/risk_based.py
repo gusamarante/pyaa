@@ -273,3 +273,31 @@ class RiskBudgetVol:
 
     def _dist_to_target(self, w):
         return ((self._risk_contribution(w) - self.budget)**2).sum()
+
+
+class VolTartget:
+    # This class handles the daily case
+
+    def __init__(self, tracker, vol_method='sd ewm'):
+        
+        # Basic chacks
+        msg = "`tracker` is not a pandas object"
+        assert isinstance(tracker, [pd.Series, pd.DataFrame]), msg
+
+        # Save inputs as attributes
+        self.vol_method = vol_method
+
+        # Start
+        daily_vol = self._get_daily_vol(tracker, vol_method)
+
+    def _get_daily_vol(tracker, vol_method):
+
+        if vol_method == 'sd ewm':
+            returns = tracker.pct_change(1)
+            vols = returns.ewm(com=21).std()
+            vol = np.sqrt(252)
+        else:
+            raise NotImplementedError(f"vol method {vol_method} not available")
+
+        return vols
+

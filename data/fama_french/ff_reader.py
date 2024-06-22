@@ -26,7 +26,7 @@ def get_ff5f():
 
 def get_ffrf():
     """
-    Reads and process the CSV that has the Fama-French 5 factors
+    Grabs the Risk free rate from Fama-French
     """
     file_path = os.path.join(dir_path, "F-F_Research_Data_5_Factors_2x3.csv")
     rf = pd.read_csv(file_path,

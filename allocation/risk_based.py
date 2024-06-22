@@ -276,26 +276,55 @@ class RiskBudgetVol:
 
 
 class VolTartget:
-    # This class handles the daily case
 
-    def __init__(self, tracker, vol_method='sd ewm'):
+    def __init__(self, tracker, vol_method='sd ewm', vol_target=0.1):
         
         # Basic chacks
         msg = "`tracker` is not a pandas object"
-        assert isinstance(tracker, [pd.Series, pd.DataFrame]), msg
+        assert isinstance(tracker, (pd.Series, pd.DataFrame)), msg
 
         # Save inputs as attributes
         self.vol_method = vol_method
 
-        # Start
+        # ===== Backtest ===
+        # Vol target / leverage factor
         daily_vol = self._get_daily_vol(tracker, vol_method)
+        scaling = vol_target / daily_vol.shift(2)  # already lagged
+        scaling = scaling.dropna()
 
+        # auxiliary variables
+        backtest = pd.Series()
+        holdings = pd.Series()
+        start_date = scaling.index[0]
+        deltap = tracker.diff(1)
+
+        # --- Initial Date ---
+        holdings.loc[start_date] = scaling.loc[start_date]
+        backtest.loc[start_date] = 100
+        next_rebal = start_date + pd.offsets.DateOffset(months=1)
+
+        # --- loop other dates ---
+        dates2loop = zip(scaling.index[1:], scaling.index[:-1])
+        for d, dm1 in dates2loop:
+            pnl = holdings.loc[dm1] * deltap.loc[d]
+            backtest.loc[d] = backtest.loc[dm1] + pnl
+
+            if d >= next_rebal:
+                holdings.loc[d] = scaling.loc[d]
+                next_rebal = d + pd.offsets.DateOffset(months=1)
+            else:
+                holdings.loc[d] = holdings.loc[dm1]
+
+        self.holdings = holdings
+        self.backtest = backtest
+
+    @staticmethod
     def _get_daily_vol(tracker, vol_method):
 
         if vol_method == 'sd ewm':
             returns = tracker.pct_change(1)
             vols = returns.ewm(com=21).std()
-            vol = np.sqrt(252)
+            vols = vols * np.sqrt(252)
         else:
             raise NotImplementedError(f"vol method {vol_method} not available")
 

@@ -5,6 +5,7 @@ import numpy as np
 from utils.stats import cov2corr
 import scipy.cluster.hierarchy as sch
 import seaborn as sns
+from tqdm import tqdm
 
 
 class HRP:
@@ -284,11 +285,13 @@ class VolTartget:
         assert isinstance(tracker, (pd.Series, pd.DataFrame)), msg
 
         # Save inputs as attributes
+        self.tracker = tracker
         self.vol_method = vol_method
 
         # ===== Backtest ===
         # Vol target / leverage factor
         daily_vol = self._get_daily_vol(tracker, vol_method)
+        self.vol = daily_vol.copy()
         scaling = vol_target / daily_vol.shift(2)  # already lagged
         scaling = scaling.dropna()
 
@@ -297,6 +300,7 @@ class VolTartget:
         holdings = pd.Series()
         start_date = scaling.index[0]
         deltap = tracker.diff(1)
+        deltap = deltap.fillna(0)
 
         # --- Initial Date ---
         holdings.loc[start_date] = scaling.loc[start_date]
@@ -305,7 +309,8 @@ class VolTartget:
 
         # --- loop other dates ---
         dates2loop = zip(scaling.index[1:], scaling.index[:-1])
-        for d, dm1 in dates2loop:
+        for d, dm1 in tqdm(dates2loop):
+
             pnl = holdings.loc[dm1] * deltap.loc[d]
             backtest.loc[d] = backtest.loc[dm1] + pnl
 
@@ -315,8 +320,50 @@ class VolTartget:
             else:
                 holdings.loc[d] = holdings.loc[dm1]
 
-        self.holdings = holdings
-        self.backtest = backtest
+        self.holdings = holdings.dropna()
+        self.backtest = backtest.dropna()
+
+    def risk_return_tradeoff(self, n_bins=5):
+        vol = self.vol.resample('M').last()
+        vol_lag = vol.shift(1)
+        ret = self.tracker.resample('M').last().pct_change(1) * 12
+
+        qtiles = pd.qcut(vol_lag, q=n_bins, labels=False)
+
+        df = pd.concat([ret.rename('Returns'), vol.rename('Vol'), qtiles.rename('Quantile') + 1], axis=1)
+        df = df.groupby('Quantile').mean()
+        df['Sharpe'] = df['Returns'] / df['Vol']
+
+        # --- Chart ---
+        fig = plt.figure(figsize=(6 * (16 / 7.3), 6))
+
+        # Returns
+        ax = plt.subplot2grid((1, 3), (0, 0))
+        ax.bar(df.index, df['Returns'])
+        ax.set_xlabel("Percentile Group of Previous Month's Vol")
+        ax.set_ylabel("Annualized Return of the Following Month")
+        ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+        ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+        # Vol
+        ax = plt.subplot2grid((1, 3), (0, 1))
+        ax.bar(df.index, df['Vol'])
+        ax.set_xlabel("Percentile Group of Previous Month's Vol")
+        ax.set_ylabel("Annualized Vol of the Following Month")
+        ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+        ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+        # Sharpe
+        ax = plt.subplot2grid((1, 3), (0, 2))
+        ax.bar(df.index, df['Sharpe'])
+        ax.set_xlabel("Percentile Group of Previous Month's Vol")
+        ax.set_ylabel("Sharpe of the Following Month")
+        ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+        ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+        plt.tight_layout()
+        plt.show()
+        plt.close()
 
     @staticmethod
     def _get_daily_vol(tracker, vol_method):

@@ -277,6 +277,18 @@ class RiskBudgetVol:
 
 
 class VolTartget:
+    """
+    This class is based on the vol targeting literature, mainly on the
+    following studies:
+
+        Moreira and Muir. “Volatility-Managed Portfolios.”
+        SSRN Electronic Journal, 2015. https://doi.org/10.2139/ssrn.2659431.
+
+        Harvey, Campbell R., Edward Hoyle, Russell Korgaonkar, Sandy Rattray,
+        Matthew Sargaison, and Otto Van Hemert. “The Impact of Volatility
+        Targeting.” The Journal of Portfolio Management 45, no. 1 (October 31,
+        2018): 14–33. https://doi.org/10.3905/jpm.2018.45.1.014.
+    """
 
     def __init__(self, tracker, vol_method='sd ewm', vol_target=0.1):
         

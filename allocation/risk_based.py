@@ -1,11 +1,11 @@
-from scipy.optimize import minimize
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from utils.stats import cov2corr
 import scipy.cluster.hierarchy as sch
+from scipy.optimize import minimize
+from utils.stats import cov2corr
+import matplotlib.pyplot as plt
 import seaborn as sns
 from tqdm import tqdm
+import pandas as pd
+import numpy as np
 
 
 class HRP:
@@ -324,13 +324,29 @@ class VolTartget:
         self.backtest = backtest.dropna()
 
     def risk_return_tradeoff(self, n_bins=5):
+        """
+        Replicates the charts for Risk-return tradeoff heterogheneity found in
+        the vol targeting studies
+
+        Parameters
+        __________
+        n_bins : int
+            Number of bins in the percentile groupings
+        """
         vol = self.vol.resample('M').last()
         vol_lag = vol.shift(1)
         ret = self.tracker.resample('M').last().pct_change(1) * 12
 
         qtiles = pd.qcut(vol_lag, q=n_bins, labels=False)
 
-        df = pd.concat([ret.rename('Returns'), vol.rename('Vol'), qtiles.rename('Quantile') + 1], axis=1)
+        df = pd.concat(
+            [
+                ret.rename('Returns'),
+                vol.rename('Vol'),
+                qtiles.rename('Quantile') + 1,
+            ],
+            axis=1,
+        )
         df = df.groupby('Quantile').mean()
         df['Sharpe'] = df['Returns'] / df['Vol']
 
@@ -367,6 +383,7 @@ class VolTartget:
 
     @staticmethod
     def _get_daily_vol(tracker, vol_method):
+        # Different Vol estilmation methods go here
 
         if vol_method == 'sd ewm':
             returns = tracker.pct_change(1)

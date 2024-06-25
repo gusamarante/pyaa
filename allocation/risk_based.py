@@ -1,10 +1,11 @@
+import scipy.cluster.hierarchy as sch
 from scipy.optimize import minimize
+from utils.stats import cov2corr
 import matplotlib.pyplot as plt
+import seaborn as sns
+from tqdm import tqdm
 import pandas as pd
 import numpy as np
-from utils.stats import cov2corr
-import scipy.cluster.hierarchy as sch
-import seaborn as sns
 
 
 class HRP:
@@ -273,3 +274,123 @@ class RiskBudgetVol:
 
     def _dist_to_target(self, w):
         return ((self._risk_contribution(w) - self.budget)**2).sum()
+
+
+class VolTartget:
+
+    def __init__(self, tracker, vol_method='sd ewm', vol_target=0.1):
+        
+        # Basic chacks
+        msg = "`tracker` is not a pandas object"
+        assert isinstance(tracker, (pd.Series, pd.DataFrame)), msg
+
+        # Save inputs as attributes
+        self.tracker = tracker
+        self.vol_method = vol_method
+
+        # ===== Backtest ===
+        # Vol target / leverage factor
+        daily_vol = self._get_daily_vol(tracker, vol_method)
+        self.vol = daily_vol.copy()
+        scaling = vol_target / daily_vol.shift(2)  # already lagged
+        scaling = scaling.dropna()
+
+        # auxiliary variables
+        backtest = pd.Series()
+        holdings = pd.Series()
+        start_date = scaling.index[0]
+        deltap = tracker.diff(1)
+        deltap = deltap.fillna(0)
+
+        # --- Initial Date ---
+        holdings.loc[start_date] = scaling.loc[start_date]
+        backtest.loc[start_date] = 100
+        next_rebal = start_date + pd.offsets.DateOffset(months=1)
+
+        # --- loop other dates ---
+        dates2loop = zip(scaling.index[1:], scaling.index[:-1])
+        for d, dm1 in tqdm(dates2loop):
+
+            pnl = holdings.loc[dm1] * deltap.loc[d]
+            backtest.loc[d] = backtest.loc[dm1] + pnl
+
+            if d >= next_rebal:
+                holdings.loc[d] = scaling.loc[d]
+                next_rebal = d + pd.offsets.DateOffset(months=1)
+            else:
+                holdings.loc[d] = holdings.loc[dm1]
+
+        self.holdings = holdings.dropna()
+        self.backtest = backtest.dropna()
+
+    def risk_return_tradeoff(self, n_bins=5):
+        """
+        Replicates the charts for Risk-return tradeoff heterogheneity found in
+        the vol targeting studies
+
+        Parameters
+        __________
+        n_bins : int
+            Number of bins in the percentile groupings
+        """
+        vol = self.vol.resample('M').last()
+        vol_lag = vol.shift(1)
+        ret = self.tracker.resample('M').last().pct_change(1) * 12
+
+        qtiles = pd.qcut(vol_lag, q=n_bins, labels=False)
+
+        df = pd.concat(
+            [
+                ret.rename('Returns'),
+                vol.rename('Vol'),
+                qtiles.rename('Quantile') + 1,
+            ],
+            axis=1,
+        )
+        df = df.groupby('Quantile').mean()
+        df['Sharpe'] = df['Returns'] / df['Vol']
+
+        # --- Chart ---
+        fig = plt.figure(figsize=(6 * (16 / 7.3), 6))
+
+        # Returns
+        ax = plt.subplot2grid((1, 3), (0, 0))
+        ax.bar(df.index, df['Returns'])
+        ax.set_xlabel("Percentile Group of Previous Month's Vol")
+        ax.set_ylabel("Annualized Return of the Following Month")
+        ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+        ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+        # Vol
+        ax = plt.subplot2grid((1, 3), (0, 1))
+        ax.bar(df.index, df['Vol'])
+        ax.set_xlabel("Percentile Group of Previous Month's Vol")
+        ax.set_ylabel("Annualized Vol of the Following Month")
+        ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+        ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+        # Sharpe
+        ax = plt.subplot2grid((1, 3), (0, 2))
+        ax.bar(df.index, df['Sharpe'])
+        ax.set_xlabel("Percentile Group of Previous Month's Vol")
+        ax.set_ylabel("Sharpe of the Following Month")
+        ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+        ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+        plt.tight_layout()
+        plt.show()
+        plt.close()
+
+    @staticmethod
+    def _get_daily_vol(tracker, vol_method):
+        # Different Vol estilmation methods go here
+
+        if vol_method == 'sd ewm':
+            returns = tracker.pct_change(1)
+            vols = returns.ewm(com=21).std()
+            vols = vols * np.sqrt(252)
+        else:
+            raise NotImplementedError(f"vol method {vol_method} not available")
+
+        return vols
+

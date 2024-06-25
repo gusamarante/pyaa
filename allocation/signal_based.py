@@ -18,7 +18,7 @@ class TSMOM:
         self.tracker = tracker
         self.ret_m = self.tracker.pct_change(21)
         self.vol_m = self._get_vol()
-        self.scaled_rets = self.ret_m / self.vol_m
+        self.scaled_rets = self.ret_m / self.vol_m.shift(1)
 
     def predictability(self, n_lags=24, show_chart=False):
         # TODO Documentation

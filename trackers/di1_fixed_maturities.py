@@ -9,6 +9,7 @@ tic = time()
 # User defined parameters
 desired_maturities = [252 * t for t in range(1, 11)]  # in DUs
 last_year = 2024
+start_date = "2008-01-01"
 
 # Read the Data
 data = pd.DataFrame()
@@ -25,6 +26,7 @@ data = data.drop('Unnamed: 0', axis=1)
 # ===== Interpolate Flat-Forward =====
 curve = data.pivot(index='reference_date', columns='du', values='rate')
 curve = curve.drop(0, axis=1)
+curve = curve[curve.index >= start_date]
 
 # generate the log-discount
 curve = np.log(1 / (1 + curve)**(curve.columns / 252))
@@ -41,7 +43,7 @@ curve.columns = [f"{int(mat/252)}y" for mat in curve.columns]
 curve = curve.dropna(how='any', axis=1)
 curve = curve.dropna()
 
-
+print(curve)
 # ===== Save rates =====
 filename = r'output data/di fixed maturities.xlsx'
 with pd.ExcelWriter(filename) as writer:

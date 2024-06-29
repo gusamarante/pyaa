@@ -7,9 +7,8 @@ from time import time
 tic = time()
 
 # User defined parameters
-desired_maturities = [21 * t for t in range(1, 15 * 12 + 1)] # in DUs
+desired_maturities = [252 * t for t in range(1, 11)]  # in DUs
 last_year = 2024
-start_date = '2006-01-01'
 
 # Read the Data
 data = pd.DataFrame()
@@ -36,8 +35,9 @@ curve = curve.interpolate(method='index', axis=1, limit_area='inside')
 # Back to rate
 curve = (1 / np.exp(curve)) ** (252 / curve.columns) - 1
 
-# Kep desired columns and drop NAs
+# Keep desired columns and drop NAs
 curve = curve[desired_maturities]
+curve.columns = [f"{int(mat/252)}y" for mat in curve.columns]
 curve = curve.dropna(how='any', axis=1)
 curve = curve.dropna()
 
@@ -46,7 +46,3 @@ curve = curve.dropna()
 filename = r'output data/di fixed maturities.xlsx'
 with pd.ExcelWriter(filename) as writer:
     curve.to_excel(writer, sheet_name="Rate")
-
-minutes = round((time() - tic) / 60, 1)
-print(f'DI Interpolation took {minutes} minutes')
-

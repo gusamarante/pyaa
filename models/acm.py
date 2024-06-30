@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
-from numpy.linalg import inv
+from numpy.linalg import inv, matrix_power
 from tqdm import tqdm
 
 
@@ -64,7 +64,7 @@ class NominalACM(object):
         self.pca_factors, self.pca_loadings = self._get_pca_factors()
 
         # Step 1 - VAR for the PCA factors
-        Mu_hat, Phi_hat, V_hat, Sigma_hat = self._estimate_factor_var()
+        Mu_hat, Phi_hat, V_hat, Sigma_hat, Mu_hat_star, Phi_hat_star, Sigma_hat_star = self._estimate_factor_var()
 
         # Step 2 - Excess return equation
         beta_hat, a_hat, B_star_hat, sigma2_hat, c_hat = self._estimate_excess_return_equation(v_hat=V_hat)
@@ -78,7 +78,7 @@ class NominalACM(object):
         # Step 5 - Affine Recursions
         # model implied yield
         if self.compute_miy:
-            miy = self._affine_recursions(Mu_hat, Phi_hat, Sigma_hat, sigma2_hat, lambda_0_hat, lambda_1_hat,
+            miy = self._affine_recursions(Mu_hat_star, Phi_hat_star, Sigma_hat_star, 252*sigma2_hat, 252*lambda_0_hat, 252*lambda_1_hat,
                                           delta_0_hat, delta_1_hat)
 
             miy = pd.DataFrame(data=miy[:, 1:],
@@ -138,10 +138,21 @@ class NominalACM(object):
         V_hat = mat_Y - (B_hat @ mat_Z)
         Sigma_hat = (1 / (self.sample_size - self.n_factors - 1)) * (V_hat @ V_hat.T)
 
+        # TODO maybe put this is a better place
         # Convert frequency of the parameters from observations to maturities
-        # TODO Parei aqui
+        Phi_hat_star = matrix_power(Phi_hat, 252)
 
-        return Mu_hat, Phi_hat, V_hat, Sigma_hat
+        Mu_hat_star = np.zeros(Phi_hat.shape)
+        for i in range(252):
+            Mu_hat_star += matrix_power(Phi_hat, i)
+        Mu_hat_star = Mu_hat_star @ Mu_hat
+
+        Sigma_hat_star = np.zeros(Sigma_hat.shape)
+        for i in range(252):
+            aux = matrix_power(Phi_hat, i)
+            Sigma_hat_star += aux @ Sigma_hat @ aux.T
+
+        return Mu_hat, Phi_hat, V_hat, Sigma_hat, Mu_hat_star, Phi_hat_star, Sigma_hat_star
 
     def _estimate_excess_return_equation(self, v_hat):
 

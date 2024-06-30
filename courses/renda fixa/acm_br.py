@@ -2,7 +2,7 @@
 Run the ACM Term premium model for brazil
 """
 from sklearn.decomposition import PCA
-from data.xls_data import curve_di
+from data.xls_data import curve_di, trackers_di
 import matplotlib.dates as mdates
 from models.acm import NominalACM
 import matplotlib.pyplot as plt
@@ -11,7 +11,19 @@ import numpy as np
 
 
 size = 5
-df_curve = curve_di()
+curve = curve_di()
+trackers = trackers_di()
+xrets = trackers.pct_change(1).dropna()
+curve = curve.reindex(xrets.index)
+
+curve.columns = [i + 1 for i in range(curve.shape[1])]
+xrets.columns = [i + 1 for i in range(xrets.shape[1])]
+
+acm = NominalACM(
+    curve=curve,
+    excess_returns=xrets,
+    compute_miy=True,
+)
 
 
 # ====================================
@@ -20,7 +32,7 @@ df_curve = curve_di()
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
 ax = plt.subplot2grid((1, 1), (0, 0))
-ax.plot(df_curve, label=df_curve.columns, lw=2)
+ax.plot(curve, label=curve.columns, lw=2)
 ax.set_title("DI Futures - Fixed Maturities")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
@@ -39,7 +51,7 @@ plt.close()
 # ===== Full sample PCA =====
 # ===========================
 pca = PCA(n_components=5)
-pca.fit(df_curve)
+pca.fit(curve)
 
 col_names = [f'PC {i+1}' for i in range(5)]
 df_var = pd.DataFrame(data={'Marginal': pca.explained_variance_ratio_,
@@ -47,17 +59,17 @@ df_var = pd.DataFrame(data={'Marginal': pca.explained_variance_ratio_,
                       index=col_names)
 df_loadings = pd.DataFrame(data=pca.components_.T,
                            columns=col_names,
-                           index=df_curve.columns)
+                           index=curve.columns)
 df_mean = pd.DataFrame(data=pca.mean_,
-                       index=df_curve.columns,
+                       index=curve.columns,
                        columns=['Médias'])
-df_pca = pd.DataFrame(data=pca.transform(df_curve.values),
+df_pca = pd.DataFrame(data=pca.transform(curve.values),
                       columns=col_names,
-                      index=df_curve.index)
+                      index=curve.index)
 
 signal = np.sign(df_loadings.iloc[-1])
 df_loadings = df_loadings * signal
-df_pca_full = df_pca * signal
+df_pca = df_pca * signal
 
 
 # ======================================

@@ -6,7 +6,7 @@ Color Palette
 FFBA08 - Yellow
 F25F5C - Red
 """
-from data.tracker_data import trackers_di
+from data.xls_data import trackers_di
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from utils import Performance, AA_LECTURE

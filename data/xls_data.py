@@ -11,3 +11,10 @@ def trackers_di():
     df = pd.read_excel(file_path, index_col=0)
     df.index = pd.to_datetime(df.index)
     return df
+
+
+def curve_di():
+    file_path = dir_path.joinpath("di fixed maturities.xlsx")
+    df = pd.read_excel(file_path, index_col=0)
+    df.index = pd.to_datetime(df.index)
+    return df

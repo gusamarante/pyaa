@@ -1,10 +1,11 @@
 """
 Run the ACM Term premium model for brazil
 """
-from data.xls_data import curve_di
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from sklearn.decomposition import PCA
+from data.xls_data import curve_di
+import matplotlib.dates as mdates
+from models.acm import NominalACM
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 

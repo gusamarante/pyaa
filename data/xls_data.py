@@ -3,11 +3,12 @@ from tqdm import tqdm
 import pandas as pd
 
 
+last_year = 2024  # Year of the last file available
+
 # ======================
 # ===== DI Futures =====
 # ======================
 def raw_di():
-    last_year = 2024
     data = pd.DataFrame()
     for year in tqdm(range(2006, last_year + 1), 'Reading DI files'):
         aux = pd.read_csv(input_path.joinpath(f'dados_di1 {year}.csv'), sep=';')
@@ -37,7 +38,6 @@ def curve_di():
 # ===== NTNB =====
 # ================
 def raw_ntnb():
-    last_year = 2024
     ntnb = pd.DataFrame()
     for year in tqdm(range(2003, last_year + 1), 'Reading NTNB files'):
         aux = pd.read_csv(input_path.joinpath(f'dados_ntnb {year}.csv'), sep=';')
@@ -50,6 +50,46 @@ def raw_ntnb():
 
 def trackers_ntnb():
     file_path = output_path.joinpath("trackers_ntnb.csv")
+    df = pd.read_csv(file_path, index_col=0)
+    df.index = pd.to_datetime(df.index)
+    return df
+
+
+# ========================
+# ===== NTNF and LTN =====
+# ========================
+def raw_ltn_ntnf():
+    # Read the Data - LTN
+    ltn = pd.DataFrame()
+    for year in tqdm(range(2003, last_year + 1), 'Reading LTN files'):
+        aux = pd.read_csv(input_path.joinpath(f'dados_ltn {year}.csv'), sep=';')
+        ltn = pd.concat([ltn, aux])
+
+    ltn['reference date'] = pd.to_datetime(ltn['reference date'])
+    ltn['maturity'] = pd.to_datetime(ltn['maturity'])
+    ltn = ltn.drop(['Unnamed: 0', 'index'], axis=1)
+
+    # Read the Data - NTNF
+    ntnf = pd.DataFrame()
+    for year in tqdm(range(2003, last_year + 1), 'Reading NTNF files'):
+        aux = pd.read_csv(input_path.joinpath(f'dados_ntnf {year}.csv'), sep=';')
+        ntnf = pd.concat([ntnf, aux])
+
+    ntnf['reference date'] = pd.to_datetime(ntnf['reference date'])
+    ntnf['maturity'] = pd.to_datetime(ntnf['maturity'])
+    ntnf = ntnf.drop(['Unnamed: 0', 'index'], axis=1)
+
+    # Put both bonds together
+    ntnf = pd.concat([ntnf, ltn])
+
+    return ntnf
+
+
+def trackers_ntnf():
+    """
+    Although the name is "ntnf", some of the trackers use ltns
+    """
+    file_path = output_path.joinpath("trackers_ntnf.csv")
     df = pd.read_csv(file_path, index_col=0)
     df.index = pd.to_datetime(df.index)
     return df

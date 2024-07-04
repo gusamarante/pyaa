@@ -1,46 +1,26 @@
-import matplotlib.pyplot as plt
+"""
+Builds total return indexes for Nominal Bonds NTN-Fs and LTN
+"""
+# TODO add liquidity filter
 from tqdm import tqdm
-from time import time
 import pandas as pd
+from data import raw_ltn_ntnf
+from data.utils import output_path
+
 
 # User defined parameters
 desired_duration = [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8]  # in years
 rebalance_window = 3  # in months
-last_year = 2023
 notional_start = 100
 start_date = '2006-01-01'
 
-# Time the run
-tic = time()
-
-# Read the Data - LTN
-ltn = pd.DataFrame()
-for year in tqdm(range(2003, last_year + 1), 'Reading LTN files'):
-    aux = pd.read_csv(f'input data/dados_ltn {year}.csv', sep=';')
-    ltn = pd.concat([ltn, aux])
-
-ltn['reference date'] = pd.to_datetime(ltn['reference date'])
-ltn['maturity'] = pd.to_datetime(ltn['maturity'])
-ltn = ltn.drop(['Unnamed: 0', 'index'], axis=1)
-
-# Read the Data - NTNF
-ntnf = pd.DataFrame()
-
-for year in tqdm(range(2003, last_year + 1), 'Reading files'):
-    aux = pd.read_csv(f'input data/dados_ntnf {year}.csv', sep=';')
-    ntnf = pd.concat([ntnf, aux])
-
-ntnf['reference date'] = pd.to_datetime(ntnf['reference date'])
-ntnf['maturity'] = pd.to_datetime(ntnf['maturity'])
-ntnf = ntnf.drop(['Unnamed: 0', 'index'], axis=1)
-
-# Put bond data togehter
-ntnf = pd.concat([ntnf, ltn])
+# Read data
+ntnf = raw_ltn_ntnf()
 
 # Set up
 dates2loop = pd.to_datetime(ntnf['reference date'].unique())
 dates2loop = dates2loop[dates2loop >= start_date]
-df_tracker = pd.DataFrame()  # To save all of the final trackers
+df_tracker = pd.DataFrame()  # To save all the final trackers
 
 # ===== Fixed Duration =====
 for dd in desired_duration:
@@ -138,10 +118,4 @@ for dd in desired_duration:
     df_tracker = pd.concat([df_tracker, df_bt], axis=1)
 
 # ===== Save Trackers =====
-filename = r'output data/trackers_ntnf.xlsx'
-with pd.ExcelWriter(filename) as writer:
-    df_tracker.to_excel(writer, sheet_name="Trackers NTNF")
-
-
-minutes = round((time() - tic) / 60, 1)
-print('NTNF trackers took', minutes, 'minutes')
+df_tracker.to_csv(output_path.joinpath('trackers_ntnf.csv'))

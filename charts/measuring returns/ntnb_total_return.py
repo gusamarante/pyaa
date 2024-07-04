@@ -6,15 +6,15 @@ Color Palette
 FFBA08 - Yellow
 F25F5C - Red
 """
+# TODO organize the color pallete rotation
 from matplotlib.ticker import ScalarFormatter
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-import pandas as pd
+from data import trackers_ntnb
 
 size = 5
 
-filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx'
-df = pd.read_excel(filepath, index_col=0)
+df = trackers_ntnb()
 
 # =================
 # ===== CHART =====

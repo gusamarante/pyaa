@@ -1,10 +1,11 @@
 """
 Grabs 3 brazilian assets and builds the min variance frontier.
 """
-
-import pandas as pd
-from utils import Performance, SGS
+# TODO systematize the consumption of total returns of FIPs
 from allocation import MeanVar
+from utils import Performance
+from data import SGS, trackers_ntnb
+import pandas as pd
 
 # =====================
 # ===== Read Data =====
@@ -24,9 +25,7 @@ bdiv = bdiv['BDIV']
 bdiv = bdiv.dropna()
 
 # NTNB
-filepath = '/Users/gustavoamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnb.xlsx'  # Mac
-# filepath = r"C:\Users\gamarante\PycharmProjects\pyaa\trackers\output data\trackers_ntnb.xlsx"  # Work
-ntnb = pd.read_excel(filepath, index_col=0)
+ntnb = trackers_ntnb()
 ntnb = ntnb['NTNB 10y']
 
 # Total return index

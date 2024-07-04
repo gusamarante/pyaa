@@ -1,7 +1,7 @@
 """
 Reader for Fama-French Data
 """
-
+# TODO we can add links to read straight from the website
 import pandas as pd
 import os
 

@@ -7,10 +7,10 @@ FFBA08 - Yellow
 F25F5C - Red
 """
 from matplotlib.ticker import ScalarFormatter
+from data import SGS, trackers_ntnf
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-from utils import SGS, Performance
-import pandas as pd
+from utils import Performance
 
 size = 5
 
@@ -21,9 +21,7 @@ sgs = SGS()
 cdi = sgs.fetch(series_id={12: 'CDI'})
 cdi = cdi['CDI'] / 100
 
-filepath = '/trackers/output data/trackers_ntnf.xlsx'  # home
-# filepath = "C:/Users/gamarante/PycharmProjects/pyaa/trackers/output data/trackers_ntnf.xlsx"  # work
-df = pd.read_excel(filepath, index_col=0)
+df = trackers_ntnf()
 
 df_rx = df.pct_change(1).sub(cdi, axis=0).dropna()
 df_eri = (1 + df_rx).cumprod()

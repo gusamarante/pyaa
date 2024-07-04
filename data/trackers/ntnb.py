@@ -1,27 +1,20 @@
-import matplotlib.pyplot as plt
+"""
+Builds total return indexes for NTN-Bs
+"""
+# TODO add liquidity filter
+from data.utils import output_path
+from data import raw_ntnb
 from tqdm import tqdm
-from time import time
 import pandas as pd
 
 # User defined parameters
 desired_duration = [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]  # in years
 rebalance_window = 3  # in months
-last_year = 2024
 notional_start = 100
 start_date = '2006-01-01'
 
-# Time the run
-tic = time()
-
 # Read the Data
-ntnb = pd.DataFrame()
-
-for year in tqdm(range(2003, last_year + 1), 'Reading files'):
-    aux = pd.read_csv(f'input data/dados_ntnb {year}.csv', sep=';')
-    ntnb = pd.concat([ntnb, aux])
-
-ntnb['reference date'] = pd.to_datetime(ntnb['reference date'])
-ntnb['maturity'] = pd.to_datetime(ntnb['maturity'])
+ntnb = raw_ntnb()
 
 # Set up
 dates2loop = pd.to_datetime(ntnb['reference date'].unique())
@@ -117,9 +110,4 @@ for dd in desired_duration:
 
 
 # ===== Save Trackers =====
-filename = r'output data/trackers_ntnb.xlsx'
-with pd.ExcelWriter(filename) as writer:
-    df_tracker.to_excel(writer, sheet_name="Trackers NTNB")
-
-minutes = round((time() - tic) / 60, 1)
-print('NTNB trackers took', minutes, 'minutes')
+df_tracker.to_csv(output_path.joinpath('trackers_ntnb.csv'))

@@ -1,36 +1,26 @@
 """
 Builds Excess Return Indexes for the Brazilian DI Futures
 """
-import matplotlib.pyplot as plt
+from data.utils import output_path
+from data import raw_di
 from tqdm import tqdm
-from time import time
 import pandas as pd
 
 # User defined parameters
 desired_duration = [i for i in range(1, 11)]  # in years
-# desired_duration = [10]  # in years
 rebalance_window = 2  # in months
-last_year = 2024
 start_date = '2008-01-01'  # when the 10y gets enough liquidity
 
 # Read the Data
-di = pd.DataFrame()
-
-for year in tqdm(range(2006, last_year + 1), 'Reading files'):
-    aux = pd.read_csv(f'input data/dados_di1 {year}.csv', sep=';')
-    di = pd.concat([di, aux])
-
-di = di.drop('Unnamed: 0', axis=1)
-di['reference_date'] = pd.to_datetime(di['reference_date'])
-di['maturity_date'] = pd.to_datetime(di['maturity_date'])
+di = raw_di()
 
 # Set up
-dates2loop = pd.to_datetime(di['reference_date'].unique()).sort_values()
+dates2loop = pd.to_datetime(di['reference_date'].unique())
 dates2loop = dates2loop[dates2loop >= start_date]
 
 df_tracker = pd.DataFrame()  # To save all the final trackers
 
-# ===== Fixed Duration =====
+# ===== Backtests for each fixed duration =====
 for dd in desired_duration:
     df_bt = pd.DataFrame()
 
@@ -106,6 +96,4 @@ for dd in desired_duration:
 df_tracker = 100 * df_tracker / df_tracker.iloc[0]
 
 # ===== Save Trackers =====
-filename = r'output data/trackers_di1.xlsx'
-with pd.ExcelWriter(filename) as writer:
-    df_tracker.to_excel(writer, sheet_name="Trackers DI1")
+df_tracker.to_csv(output_path.joinpath('trackers_di1.csv'))

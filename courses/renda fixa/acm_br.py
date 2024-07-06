@@ -4,6 +4,7 @@ import numpy as np
 
 di = curve_di()
 di = di.loc[:, :'120m'].dropna()
+di = di[di.index >= "2008-01-01"]
 
 
 # Convert yields to log-yields

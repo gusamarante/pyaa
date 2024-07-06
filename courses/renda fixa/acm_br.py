@@ -9,9 +9,11 @@ di = di[di.index >= "2008-01-01"]
 
 # Convert yields to log-yields
 # TODO should this go inside the class?
-log_di = np.log(1 + di)
+# log_di = np.log(1 + di)
 
 
 acm = NominalACM(
-    curve=log_di,
+    curve=di,
+    compute_miy=True,
+    output_freq='D',
 )

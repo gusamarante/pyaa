@@ -23,7 +23,7 @@ class NominalACM:
         - To get daily / real-time estimates, the factor loading estimated from
           the monthly frquency are used to transform the daily data.
 
-    This class was updated usign code from github user miabrahams. His jupyter
+    This class was updated usign code from GitHub user miabrahams. His jupyter
     notebook had much more succint formulas, that made code easier to understand
     and faster to run.
     """

@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 from models import NominalACM
 from data import curve_di
-import numpy as np
 
 di = curve_di()
 di = di.loc[:, :'120m'].dropna()

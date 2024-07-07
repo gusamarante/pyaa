@@ -6,6 +6,7 @@ import numpy as np
 
 class NominalACM:
     # TODO add inference
+    # TODO add unspanned factors
 
     def __init__(self, curve, n_factors=5):
         # TODO documentation
@@ -21,16 +22,22 @@ class NominalACM:
         self.n_maturities = curve.shape[1]
         self.rx_m, self.rf_m = self._get_excess_returns()
         self.rf_d = self.curve.iloc[:, 0] * (1 / 12)
-        self.pc_factors, self.pc_loadings = self._get_pcs(self.curve_monthly)
+        self.pc_factors_m, self.pc_loadings_m = self._get_pcs(self.curve_monthly)
         self.pc_factors_d, self.pc_loadings_d = self._get_pcs(self.curve)
         self.mu, self.phi, self.Sigma, self.v = self._estimate_var()
         self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
         self.lambda0, self.lambda1 = self._retrieve_lambda()
 
-        self.miy = self._affine_recursions(self.lambda0, self.lambda1, self.pc_factors_d, self.rf_d)
-        self.rny = self._affine_recursions(0, 0, self.pc_factors_d, self.rf_d)
+        if self.curve.index.freqstr == 'M':
+            X = self.pc_factors_m
+            r1 = self.rf_m
+        else:
+            X = self.pc_factors_d
+            r1 = self.rf_d
+
+        self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
+        self.rny = self._affine_recursions(0, 0, X, r1)
         # self.tp = 1
-        # TODO Compute Yields on daily frequency, NOT WORKING
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n_maturities + 1) / 12
@@ -56,7 +63,7 @@ class NominalACM:
         return df_pc, df_loadings
 
     def _estimate_var(self):
-        X = self.pc_factors.copy().T
+        X = self.pc_factors_m.copy().T
         X_lhs = X.values[:, 1:]  # X_t+1. Left hand side of VAR
         X_rhs = np.vstack((np.ones((1, self.t)), X.values[:, 0:-1]))  # X_t and a constant.
 
@@ -70,7 +77,7 @@ class NominalACM:
         return mu, phi, Sigma, v
 
     def _excess_return_regression(self):
-        X = self.pc_factors.copy().T.values[:, :-1]
+        X = self.pc_factors_m.copy().T.values[:, :-1]
         Z = np.vstack((np.ones((1, self.t)), self.v, X))  # Innovations and lagged X
         abc = self.rx_m.values.T @ np.linalg.pinv(Z)
         E = self.rx_m.values.T - abc @ Z
@@ -90,7 +97,7 @@ class NominalACM:
 
     def _affine_recursions(self, lambda0, lambda1, X_in, r1):
         X = X_in.T.values[:, 1:]
-        r1 = self.vec(r1.values)[1:, :]
+        r1 = self.vec(r1.values)[-X.shape[1]:, :]
 
         A = np.zeros((1, self.n))
         B = np.zeros((self.n_factors, self.n))

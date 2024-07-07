@@ -11,7 +11,7 @@ di = di[di.index >= "2008-01-01"]
 # Convert yields to log-yields
 # TODO should this go inside the class?
 # log_di = np.log(1 + di)
-
+# di = di.resample('M').last()
 
 acm = NominalACM(
     curve=di,

@@ -1,4 +1,4 @@
-from .acm_new import NominalACM
+from .acm import NominalACM
 
 __all__ = [
     'NominalACM'

@@ -23,22 +23,23 @@ class NominalACM:
         self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
         self.lambda0, self.lambda1 = self._retrieve_lambda()
 
-        if output_freq == 'M':
-            X = self.pc_factors
-            r1 = self.curve_monthly.iloc[:, 0]
-        elif output_freq == 'D':
-            X = self.pc_factors_d
-            r1 = self.curve.iloc[:, 0]
-        else:
-            raise ValueError("Invalid `output_freq`")
+        # if output_freq == 'M':
+        #     X = self.pc_factors
+        #     r1 = self.curve_monthly.iloc[:, 0]
+        # elif output_freq == 'D':
+        #     X = self.pc_factors_d
+        #     r1 = self.curve.iloc[:, 0]
+        # else:
+        #     raise ValueError("Invalid `output_freq`")
 
-        if compute_miy:
-            self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
-        else:
-            self.miy = None
+        # if compute_miy:
+        #     self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
+        # else:
+        #     self.miy = None
 
-        self.rny = self._affine_recursions(0, 0, X, r1)
-        self.tp = 1
+        self.miy = self._affine_recursions(self.lambda0, self.lambda1)
+        self.rny = self._affine_recursions(0, 0)
+        # self.tp = 1
         # TODO Compute PCs on daily frequency, NOT WORKING
 
     def _get_excess_returns(self):
@@ -98,14 +99,13 @@ class NominalACM:
         lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ self.vec(self.Sigma) + self.sigma2))
         return lambda0, lambda1
 
-    def _affine_recursions(self, lambda0, lambda1, X_in, r1):
-        X = X_in.T.values[:, 1:]
-        r1 = r1.values[1:]
+    def _affine_recursions(self, lambda0, lambda1):
+        X = self.pc_factors.T.values[:, 1:]
 
         A = np.zeros((1, self.n))
         B = np.zeros((self.n_factors, self.n))
 
-        delta = self.vec(r1).T @ np.linalg.pinv(np.vstack((np.ones((1, X.shape[1])), X)))
+        delta = self.vec(self.rf.values).T @ np.linalg.pinv(np.vstack((np.ones((1, X.shape[1])), X)))
         delta0 = delta[[0], [0]]
         delta1 = delta[[0], 1:]
 
@@ -122,7 +122,7 @@ class NominalACM:
         fitted_yields = - fitted_log_prices / ttm
         fitted_yields = pd.DataFrame(
             data=fitted_yields,
-            index=X_in.index[1:],
+            index=self.rx.index,
             columns=self.curve.columns,
         )
         return fitted_yields

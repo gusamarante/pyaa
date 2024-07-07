@@ -1,230 +1,163 @@
-import numpy as np
-import pandas as pd
 from sklearn.decomposition import PCA
-from numpy.linalg import inv
-from tqdm import tqdm
+import pandas as pd
+import numpy as np
 
 
-class NominalACM(object):
+class NominalACM:
     """
-    This class intends to replicate the paper 'pricing term structures with
-    linear regressions' by Adrian, Crump & Moench (2013). It takes the zero
-    curve vertices and excess returns of positions from all of them and return
-    the term premium and risk neutral yields as object attributes.
+    This class implements the model from the article:
+
+        Adrian, Tobias, Richard K. Crump, and Emanuel Moench. “Pricing the
+        Term Structure with Linear Regressions.” SSRN Electronic Journal,
+        2012. https://doi.org/10.2139/ssrn.1362586.
+
+    It handles data transformation, estimates parameters and generates the
+    relevant outputs. The version of the article that was published by the NY
+    FED is not 100% explicit on how the data is being manipulated, but I found
+    an earlier version of the paper on SSRN where the authors go deeper into the
+    details on how everything is being estimated:
+        - Data for zero yields uses monthly maturities starting from month 1
+        - All principal components and model parameters are estiamted with data
+          resampled to a monthly frequency by averaging observations in each
+          month.
+        - To get daily / real-time estimates, the factor loading estimated from
+          the monthly frquency are used to transform the daily data.
+
+    This class was updated usign code from GitHub user miabrahams. His jupyter
+    notebook had much more succint formulas, that made code easier to understand
+    and faster to run.
     """
 
-    base_count_dict = {'daily': 252,
-                       'monthly': 12,
-                       'yearly': 1}
-
-    def __init__(self, curve, excess_returns, freq_mat='yearly', freq_obs='daily', interpolation='pchip', n_factors=5, compute_miy=False, verbose=False):
+    def __init__(self, curve, n_factors=5):
         """
-        This class intends to replicate the paper 'pricing term structures with
-        linear regressions' by Adrian, Crump & Moench (2013). It takes the zero
-        curve vertices and excess returns of positions from all of them and
-        return the term premium and risk neutral yields as object attributes.
+        Runs the baseline varsion of the ACM term premium model. Works for data
+        with monthly frequency or higher.
 
         Parameters
         ----------
-        curve : pd.Dataframe
-            Equally spaced vertices as columns. Values must be in percent, not
-            percentage points
+        curve : pandas.DataFrame
+            Annualized log-yields. Maturities (columns) must start at month 1
+            and be equally spaced in monthly frequency. The labels of the
+            columns do not matter, they be kept the same. Observations (index)
+            must be of monthly frequency or higher. The index must be a
+            pandas.DateTimeIndex.
 
-        excess_returns : pd.DataFrame
-            the excess returns of the vertices as columns
-
-        freq_mat : str
-            Space between each observed maturity
-
-        freq_obs : str
-            Time between each observation
-
-        # TODO what to do here?
+        n_factors : int
+            number of principal components to used as state variables.
         """
 
-        # TODO assert curve and excess returns have the same index
-        # TODO assert curve and excess returns have the same columns
-        # TODO normalize all array operations to have 2 dimensions
-        self.curve = curve
-        self.excess_returns = excess_returns
-        self.curve_exp = np.log(1 + curve)
         self.n_factors = n_factors
-        self.n_tenors = excess_returns.shape[1]
-        self.tenors = excess_returns.columns  # TODO Remove this
-        self.sample_size = curve.shape[0]
-        self.base_count = self.base_count_dict[freq_mat]
-        self.periods_in_year = self.base_count_dict[freq_obs]
-        self.compute_miy = compute_miy
+        self.curve = curve
+        self.curve_monthly = curve.resample('M').mean()
+        self.t = self.curve_monthly.shape[0] - 1
+        self.n = self.curve_monthly.shape[1]
+        self.rx_m, self.rf_m = self._get_excess_returns()
+        self.rf_d = self.curve.iloc[:, 0] * (1 / 12)
+        self.pc_factors_m, self.pc_loadings_m = self._get_pcs(self.curve_monthly)
+        self.pc_factors_d, self.pc_loadings_d = self._get_pcs(self.curve)
+        self.mu, self.phi, self.Sigma, self.v = self._estimate_var()
+        self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
+        self.lambda0, self.lambda1 = self._retrieve_lambda()
 
-        self._run_estimation()
-
-    def _run_estimation(self):
-
-        # Step 0 - get the PCA factor series of the yield curve
-        self.pca_factors, self.pca_loadings = self._get_pca_factors()
-
-        # Step 1 - VAR for the PCA factors
-        Mu_hat, Phi_hat, V_hat, Sigma_hat = self._estimate_factor_var()
-
-        # Step 2 - Excess return equation
-        beta_hat, a_hat, B_star_hat, sigma2_hat, c_hat = self._estimate_excess_return_equation(v_hat=V_hat)
-
-        # Step 3 - Estimate price of risk parameters
-        lambda_0_hat, lambda_1_hat = self._retrieve_lambda(beta_hat, a_hat, B_star_hat, Sigma_hat, sigma2_hat, c_hat)
-
-        # Step 4 - Equation for the Short Rate
-        delta_0_hat, delta_1_hat = self._estimate_short_rate_equation()
-
-        # Step 5 - Affine Recursions
-        # model implied yield
-        if self.compute_miy:
-            miy = self._affine_recursions(Mu_hat, Phi_hat, Sigma_hat, sigma2_hat, lambda_0_hat, lambda_1_hat,
-                                          delta_0_hat, delta_1_hat)
-
-            miy = pd.DataFrame(data=miy[:, 1:],
-                               index=self.pca_factors.index,
-                               columns=[i + 1 for i in range(self.tenors.max())])
-
-            self.miy = np.exp(miy) - 1
+        if self.curve.index.freqstr == 'M':
+            X = self.pc_factors_m
+            r1 = self.rf_m
         else:
-            self.miy = None
+            X = self.pc_factors_d
+            r1 = self.rf_d
 
-        # risk neutral yield
-        rny = self._affine_recursions(Mu_hat, Phi_hat, Sigma_hat, sigma2_hat, 0, 0, delta_0_hat, delta_1_hat)
+        self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
+        self.rny = self._affine_recursions(0, 0, X, r1)
+        self.tp = self.miy - self.rny
 
-        rny = pd.DataFrame(data=rny[:, 1:],
-                           index=self.PCA_factors[1:].index,
-                           columns=list(range(1, self.tenors.max() + 1)))
+    def _get_excess_returns(self):
+        ttm = np.arange(1, self.n + 1) / 12
+        log_prices = - self.curve_monthly * ttm
+        rf = - log_prices.iloc[:, 0].shift(1)
+        rx = (log_prices - log_prices.shift(1, axis=0).shift(-1, axis=1)).subtract(rf, axis=0)
+        rx = rx.dropna(how='all', axis=0).dropna(how='all', axis=1)
+        return rx, rf.dropna()
 
-        self.rny = np.exp(rny) - 1
-        self.term_premium = ((1 + self.curve) / (1 + self.rny) - 1).dropna(how='all')
-
-    def _get_pca_factors(self):
-
+    def _get_pcs(self, curve):
         pca = PCA(n_components=self.n_factors)
-
-        col_names = [f'PC {i+1}' for i in range(self.n_factors)]
-        df_pca = pd.DataFrame(data=pca.fit_transform(self.curve_exp),
-                              index=self.curve.index,
-                              columns=col_names)
-
+        pca.fit(curve)
+        col_names = [f'PC {i + 1}' for i in range(self.n_factors)]
         df_loadings = pd.DataFrame(data=pca.components_.T,
                                    columns=col_names,
-                                   index=self.curve.columns)
+                                   index=curve.columns)
 
-        # Standardize the sign
+        # Normalize the direction of the eigenvectors
         signal = np.sign(df_loadings.iloc[-1])
         df_loadings = df_loadings * signal
-        df_pca = df_pca * signal
+        df_pc = (curve - curve.mean()) @ df_loadings
 
-        return df_pca, df_loadings
+        return df_pc, df_loadings
 
-    def _estimate_factor_var(self):
-        Y = self.pca_factors.iloc[1:].copy()
-        Z = self.pca_factors.iloc[:-1].copy()
-        Z.insert(0, 'const', 1)
-        Z = Z.T
+    def _estimate_var(self):
+        X = self.pc_factors_m.copy().T
+        X_lhs = X.values[:, 1:]  # X_t+1. Left hand side of VAR
+        X_rhs = np.vstack((np.ones((1, self.t)), X.values[:, 0:-1]))  # X_t and a constant.
 
-        # VAR(1) estimator is given by equation (3.2.10) from Lutkepohl's book.
-        mat_Z = Z.values
-        mat_Y = Y.values.T
-        B_hat = mat_Y @ (mat_Z.T @ inv(mat_Z @ mat_Z.T))
+        var_coeffs = (X_lhs @ np.linalg.pinv(X_rhs))
+        mu = var_coeffs[:, [0]]
+        phi = var_coeffs[:, 1:]
 
-        # Computes matrices Mu and Phi of the VAR(1) of the paper.
-        Mu_hat = B_hat[:, 0]
-        Phi_hat = B_hat[:, 1:]
+        v = X_lhs - var_coeffs @ X_rhs
+        Sigma = v @ v.T / self.t
 
-        # residuals matrix V_hat and the unbiased estimate of its covariance
-        V_hat = mat_Y - (B_hat @ mat_Z)
-        Sigma_hat = (1 / (self.sample_size - self.n_factors - 1)) * (V_hat @ V_hat.T)
+        return mu, phi, Sigma, v
 
-        # Convert frequency of the parameters from observations to maturities
-        # TODO Parei aqui
+    def _excess_return_regression(self):
+        X = self.pc_factors_m.copy().T.values[:, :-1]
+        Z = np.vstack((np.ones((1, self.t)), self.v, X))  # Innovations and lagged X
+        abc = self.rx_m.values.T @ np.linalg.pinv(Z)
+        E = self.rx_m.values.T - abc @ Z
+        sigma2 = np.trace(E @ E.T) / (self.n * self.t)
 
-        return Mu_hat, Phi_hat, V_hat, Sigma_hat
+        a = abc[:, [0]]
+        beta = abc[:, 1:self.n_factors + 1].T
+        c = abc[:, self.n_factors + 1:]
 
-    def _estimate_excess_return_equation(self, v_hat):
+        return a, beta, c, sigma2
 
-        mat_rx = self.excess_returns.iloc[1:].values.T
+    def _retrieve_lambda(self):
+        BStar = np.squeeze(np.apply_along_axis(self.vec_quad_form, 1, self.beta.T))
+        lambda1 = np.linalg.pinv(self.beta.T) @ self.c
+        lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ self.vec(self.Sigma) + self.sigma2))
+        return lambda0, lambda1
 
-        Z = np.concatenate((np.ones((1, self.sample_size - 1)), v_hat, self.pca_factors.iloc[:-1].T))
+    def _affine_recursions(self, lambda0, lambda1, X_in, r1):
+        X = X_in.T.values[:, 1:]
+        r1 = self.vec(r1.values)[-X.shape[1]:, :]
 
-        D_hat = mat_rx @ (Z.T @ inv(Z @ Z.T))
-        a_hat = D_hat[:, 0]
-        beta_hat = D_hat[:, 1:self.n_factors + 1].T
-        c_hat = D_hat[:, self.n_factors + 1:]
+        A = np.zeros((1, self.n))
+        B = np.zeros((self.n_factors, self.n))
 
-        E_hat = mat_rx - (D_hat @ Z)
-        sigma2_hat = np.trace(E_hat @ E_hat.T) / (self.n_tenors * (self.sample_size - 1))
+        delta = r1.T @ np.linalg.pinv(np.vstack((np.ones((1, X.shape[1])), X)))
+        delta0 = delta[[0], [0]]
+        delta1 = delta[[0], 1:]
 
-        # Builds the B* matrix, defined in equation (13) of the paper
-        B_star_hat = np.zeros((self.n_tenors, self.n_factors ** 2))
-        for i in range(0, self.n_tenors):
-            beta_col = beta_hat[:, i].reshape((-1, 1))
-            B_star_hat[i, :] = np.reshape(beta_col @ beta_col.T, (1, self.n_factors ** 2))
+        A[0, 0] = - delta0
+        B[:, 0] = - delta1
 
-        # beta_hat = np.array(beta_hat)  # TODO remove this?
+        for i in range(self.n - 1):
+            A[0, i + 1] = A[0, i] + B[:, i].T @ (self.mu - lambda0) + 1 / 2 * (B[:, i].T @ self.Sigma @ B[:, i] + 0 * self.sigma2) - delta0
+            B[:, i + 1] = B[:, i] @ (self.phi - lambda1) - delta1
 
-        return beta_hat, a_hat, B_star_hat, sigma2_hat, c_hat
+        # Construct fitted yields
+        ttm = np.arange(1, self.n + 1) / 12
+        fitted_log_prices = (A.T + B.T @ X).T
+        fitted_yields = - fitted_log_prices / ttm
+        fitted_yields = pd.DataFrame(
+            data=fitted_yields,
+            index=self.curve.index[1:],
+            columns=self.curve.columns,
+        )
+        return fitted_yields
 
-    def _retrieve_lambda(self, beta_hat, a_hat, b_star_hat, Sigma_hat, sigma2_hat, c_hat):
+    @staticmethod
+    def vec(x):
+        return np.reshape(x, (-1, 1))
 
-        # beta_hat = np.matrix(beta_hat)  # TODO remove these?
-        # a_hat = np.matrix(a_hat)
-        a_hat = a_hat.reshape((-1, 1))
-        # b_star_hat = np.matrix(b_star_hat)
-        # Sigma_hat = np.matrix(Sigma_hat)
-        # c_hat = np.matrix(c_hat)
-
-        vecSigma = Sigma_hat.reshape((-1, 1))
-        lambda_0_hat = inv(beta_hat @ beta_hat.T) @ (beta_hat @ (a_hat + 0.5 * (b_star_hat @ vecSigma + sigma2_hat * np.ones((self.n_tenors, 1)))))
-        lambda_1_hat = (inv(beta_hat @ beta_hat.T) @ beta_hat) @ c_hat
-
-        return lambda_0_hat, lambda_1_hat
-
-    def _estimate_short_rate_equation(self):
-
-        X_star = self.pca_factors.copy()
-        X_star.insert(0, 'const', 1)
-        X_star = X_star.values
-
-        r1 = ((1/self.base_count) * self.curve_exp.iloc[:, 0].values).reshape((-1, 1))
-
-        # Delta_hat = np.dot(np.dot(np.linalg.inv(np.dot(X_star.T, X_star)), X_star.T), r1)  # TODO remove this
-        Delta_hat = inv(X_star.T @ X_star) @ X_star.T @ r1
-        delta_0_hat = Delta_hat[0]
-        delta_1_hat = Delta_hat[1:]
-
-        return delta_0_hat, delta_1_hat
-
-    def _affine_recursions(self, Mu_hat, Phi_hat, Sigma_hat, sigma2_hat, lambda_0_hat, lambda_1_hat, delta_0_hat,
-                           delta_1_hat):
-
-        Mu_hat = Mu_hat.reshape((-1, 1))
-
-        X_star = self.pca_factors.copy()
-        # X_star.insert(0, 'const', 1)
-        X_star = X_star.values
-
-        N_rec, N_start = self.tenors.max(), self.tenors.min()
-
-        Bn = np.zeros((self.n_factors, N_rec + 1))
-        # Bn[:, 1] = - delta_1_hat.reshape((self.n_factors, ))
-
-        for i in range(N_start, N_rec + 1):
-            Bn[:, i] = (Bn[:, i - 1].T @ (Phi_hat - lambda_1_hat) - delta_1_hat.T).T.reshape((-1, ))
-
-        An = np.zeros((1, N_rec + 1))
-        # An[:, 1] = -delta_0_hat
-
-        for i in range(N_start, N_rec + 1):
-            An[:, i] = An[:, i - 1] + Bn[:, i - 1].T @ (Mu_hat - lambda_0_hat) + 0.5 * (Bn[:, i - 1].T @ Sigma_hat @ Bn[:, i - 1] + sigma2_hat) - delta_0_hat
-
-        miy = np.zeros((self.sample_size, N_rec + 1))
-        Xt = X_star.T
-
-        for t in tqdm(range(self.sample_size), 'Computing Yields'):
-            for n in range(N_start, N_rec + 1):  # iterate on the maturities
-                miy[t, n] = - (self.base_count / n) * (An[:, n] + Bn[:, n].T @ Xt[:, t])
-
-        return miy
+    def vec_quad_form(self, x):
+        return self.vec(np.outer(x, x))

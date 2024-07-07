@@ -98,7 +98,7 @@ class NominalACM:
         A[0, 0] = - delta0
         B[:, 0] = - delta1
 
-        for i in range(0, self.n - 1):
+        for i in range(self.n - 1):
             A[0, i + 1] = A[0, i] + B[:, i].T @ (self.mu - lambda0) + 1 / 2 * (B[:, i].T @ self.Sigma @ B[:, i] + 0 * self.sigma2) - delta0
             B[:, i + 1] = B[:, i] @ (self.phi - lambda1) - delta1
 

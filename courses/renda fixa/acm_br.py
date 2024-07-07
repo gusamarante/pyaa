@@ -30,3 +30,9 @@ di[mat].plot()
 acm.miy[mat].plot()
 acm.rny[mat].plot()
 plt.show()
+
+mat = "120m"
+di[mat].plot()
+acm.miy[mat].plot()
+acm.rny[mat].plot()
+plt.show()

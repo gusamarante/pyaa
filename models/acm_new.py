@@ -1,25 +1,56 @@
-# TODO cite https://github.com/miabrahams
 from sklearn.decomposition import PCA
 import pandas as pd
 import numpy as np
 
 
 class NominalACM:
-    # TODO add inference
-    # TODO add unspanned factors
+    """
+    This class implements the model from the article:
+
+        Adrian, Tobias, Richard K. Crump, and Emanuel Moench. “Pricing the
+        Term Structure with Linear Regressions.” SSRN Electronic Journal,
+        2012. https://doi.org/10.2139/ssrn.1362586.
+
+    It handles data transformation, estimates parameters and generates the
+    relevant outputs. The version of the article that was published by the NY
+    FED is not 100% explicit on how the data is being manipulated, but I found
+    an earlier version of the paper on SSRN where the authors go deeper into the
+    details on how everything is being estimated:
+        - Data for zero yields uses monthly maturities starting from month 1
+        - All principal components and model parameters are estiamted with data
+          resampled to a monthly frequency by averaging observations in each
+          month.
+        - To get daily / real-time estimates, the factor loading estimated from
+          the monthly frquency are used to transform the daily data.
+
+    This class was updated usign code from github user miabrahams. His version
+    jupyter notebook had much more succint formulas, that made code easier to
+    understand and faster to run.
+    """
 
     def __init__(self, curve, n_factors=5):
-        # TODO documentation
-        #  curve must be of log yields
-        #  must be monthly and start at month 1
-        #  equally spaced maturities
+        """
+        Runs the baseline varsion of the ACM term premium model. Works for data
+        with monthly frequency or higher.
+
+        Parameters
+        ----------
+        curve : pandas.DataFrame
+            Annualized log-yields. Maturities (columns) must start at month 1
+            and be equally spaced in monthly frequency. The labels of the
+            columns do not matter, they be kept the same. Observations (index)
+            must be of monthly frequency or higher. The index must be a
+            pandas.DateTimeIndex.
+
+        n_factors : int
+            number of principal components to used as state variables.
+        """
 
         self.n_factors = n_factors
         self.curve = curve
         self.curve_monthly = curve.resample('M').mean()
         self.t = self.curve_monthly.shape[0] - 1
         self.n = self.curve_monthly.shape[1]
-        self.n_maturities = curve.shape[1]
         self.rx_m, self.rf_m = self._get_excess_returns()
         self.rf_d = self.curve.iloc[:, 0] * (1 / 12)
         self.pc_factors_m, self.pc_loadings_m = self._get_pcs(self.curve_monthly)
@@ -37,10 +68,10 @@ class NominalACM:
 
         self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
         self.rny = self._affine_recursions(0, 0, X, r1)
-        # self.tp = 1
+        self.tp = self.miy - self.rny
 
     def _get_excess_returns(self):
-        ttm = np.arange(1, self.n_maturities + 1) / 12
+        ttm = np.arange(1, self.n + 1) / 12
         log_prices = - self.curve_monthly * ttm
         rf = - log_prices.iloc[:, 0].shift(1)
         rx = (log_prices - log_prices.shift(1, axis=0).shift(-1, axis=1)).subtract(rf, axis=0)
@@ -114,7 +145,7 @@ class NominalACM:
             B[:, i + 1] = B[:, i] @ (self.phi - lambda1) - delta1
 
         # Construct fitted yields
-        ttm = np.arange(1, self.n_maturities + 1) / 12
+        ttm = np.arange(1, self.n + 1) / 12
         fitted_log_prices = (A.T + B.T @ X).T
         fitted_yields = - fitted_log_prices / ttm
         fitted_yields = pd.DataFrame(

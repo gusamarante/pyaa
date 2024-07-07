@@ -23,24 +23,10 @@ class NominalACM:
         self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
         self.lambda0, self.lambda1 = self._retrieve_lambda()
 
-        # if output_freq == 'M':
-        #     X = self.pc_factors
-        #     r1 = self.curve_monthly.iloc[:, 0]
-        # elif output_freq == 'D':
-        #     X = self.pc_factors_d
-        #     r1 = self.curve.iloc[:, 0]
-        # else:
-        #     raise ValueError("Invalid `output_freq`")
-
-        # if compute_miy:
-        #     self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
-        # else:
-        #     self.miy = None
-
         self.miy = self._affine_recursions(self.lambda0, self.lambda1)
         self.rny = self._affine_recursions(0, 0)
         # self.tp = 1
-        # TODO Compute PCs on daily frequency, NOT WORKING
+        # TODO Compute Yields on daily frequency, NOT WORKING
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n_maturities + 1) / 12

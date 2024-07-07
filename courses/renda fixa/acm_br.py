@@ -23,6 +23,10 @@ mat = "6m"
 di[mat].plot()
 acm.miy[mat].plot()
 acm.rny[mat].plot()
-# acm.pc_factors_d['PC 1'].plot()
-# acm.pc_factors['PC 1'].plot()
+plt.show()
+
+mat = "60m"
+di[mat].plot()
+acm.miy[mat].plot()
+acm.rny[mat].plot()
 plt.show()

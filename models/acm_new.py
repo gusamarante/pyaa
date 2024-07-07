@@ -18,7 +18,8 @@ class NominalACM:
         self.n = self.curve_monthly.shape[1]
         self.n_maturities = curve.shape[1]
         self.rx, self.rf = self._get_excess_returns()
-        self.pc_factors, self.pc_factors_d, self.pc_loadings = self._get_pcs()
+        self.pc_factors, self.pc_loadings = self._get_pcs(self.curve_monthly)
+        self.pc_factors_d, self.pc_loadings_d = self._get_pcs(self.curve)
         self.mu, self.phi, self.Sigma, self.v = self._estimate_var()
         self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
         self.lambda0, self.lambda1 = self._retrieve_lambda()
@@ -36,21 +37,20 @@ class NominalACM:
         rx = rx.dropna(how='all', axis=0).dropna(how='all', axis=1)
         return rx, rf.dropna()
 
-    def _get_pcs(self):
+    def _get_pcs(self, curve):
         pca = PCA(n_components=self.n_factors)
-        pca.fit(self.curve_monthly)
+        pca.fit(curve)
         col_names = [f'PC {i + 1}' for i in range(self.n_factors)]
         df_loadings = pd.DataFrame(data=pca.components_.T,
                                    columns=col_names,
-                                   index=self.curve.columns)
+                                   index=curve.columns)
 
         # Normalize the direction of the eigenvectors
         signal = np.sign(df_loadings.iloc[-1])
         df_loadings = df_loadings * signal
-        df_pc_m = (self.curve_monthly - self.curve_monthly.mean()) @ df_loadings
-        df_pc_d = (self.curve - self.curve.mean()) @ df_loadings
+        df_pc = (curve - curve.mean()) @ df_loadings
 
-        return df_pc_m, df_pc_d, df_loadings
+        return df_pc, df_loadings
 
     def _estimate_var(self):
         X = self.pc_factors.copy().T

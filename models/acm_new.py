@@ -7,25 +7,28 @@ import numpy as np
 class NominalACM:
     # TODO add inference
 
-    def __init__(self, curve, n_factors=5, compute_miy=False, output_freq='M'):
+    def __init__(self, curve, n_factors=5):
         # TODO documentation
         #  curve must be of log yields
         #  must be monthly and start at month 1
+        #  equally spaced maturities
+
         self.n_factors = n_factors
         self.curve = curve
         self.curve_monthly = curve.resample('M').mean()
         self.t = self.curve_monthly.shape[0] - 1
         self.n = self.curve_monthly.shape[1]
         self.n_maturities = curve.shape[1]
-        self.rx, self.rf = self._get_excess_returns()
+        self.rx_m, self.rf_m = self._get_excess_returns()
+        self.rf_d = self.curve.iloc[:, 0] * (1 / 12)
         self.pc_factors, self.pc_loadings = self._get_pcs(self.curve_monthly)
         self.pc_factors_d, self.pc_loadings_d = self._get_pcs(self.curve)
         self.mu, self.phi, self.Sigma, self.v = self._estimate_var()
         self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
         self.lambda0, self.lambda1 = self._retrieve_lambda()
 
-        self.miy = self._affine_recursions(self.lambda0, self.lambda1)
-        self.rny = self._affine_recursions(0, 0)
+        self.miy = self._affine_recursions(self.lambda0, self.lambda1, self.pc_factors_d, self.rf_d)
+        self.rny = self._affine_recursions(0, 0, self.pc_factors_d, self.rf_d)
         # self.tp = 1
         # TODO Compute Yields on daily frequency, NOT WORKING
 
@@ -69,8 +72,8 @@ class NominalACM:
     def _excess_return_regression(self):
         X = self.pc_factors.copy().T.values[:, :-1]
         Z = np.vstack((np.ones((1, self.t)), self.v, X))  # Innovations and lagged X
-        abc = self.rx.values.T @ np.linalg.pinv(Z)
-        E = self.rx.values.T - abc @ Z
+        abc = self.rx_m.values.T @ np.linalg.pinv(Z)
+        E = self.rx_m.values.T - abc @ Z
         sigma2 = np.trace(E @ E.T) / (self.n * self.t)
 
         a = abc[:, [0]]
@@ -85,13 +88,14 @@ class NominalACM:
         lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ self.vec(self.Sigma) + self.sigma2))
         return lambda0, lambda1
 
-    def _affine_recursions(self, lambda0, lambda1):
-        X = self.pc_factors.T.values[:, 1:]
+    def _affine_recursions(self, lambda0, lambda1, X_in, r1):
+        X = X_in.T.values[:, 1:]
+        r1 = self.vec(r1.values)[1:, :]
 
         A = np.zeros((1, self.n))
         B = np.zeros((self.n_factors, self.n))
 
-        delta = self.vec(self.rf.values).T @ np.linalg.pinv(np.vstack((np.ones((1, X.shape[1])), X)))
+        delta = r1.T @ np.linalg.pinv(np.vstack((np.ones((1, X.shape[1])), X)))
         delta0 = delta[[0], [0]]
         delta1 = delta[[0], 1:]
 
@@ -108,7 +112,7 @@ class NominalACM:
         fitted_yields = - fitted_log_prices / ttm
         fitted_yields = pd.DataFrame(
             data=fitted_yields,
-            index=self.rx.index,
+            index=self.curve.index[1:],
             columns=self.curve.columns,
         )
         return fitted_yields

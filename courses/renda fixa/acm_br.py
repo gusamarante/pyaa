@@ -15,8 +15,6 @@ di = di[di.index >= "2008-01-01"]
 
 acm = NominalACM(
     curve=di,
-    compute_miy=True,
-    output_freq='D',
 )
 
 mat = "6m"

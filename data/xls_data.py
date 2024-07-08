@@ -31,6 +31,7 @@ def curve_di():
     file_path = output_path.joinpath("di monthly maturities.csv")
     df = pd.read_csv(file_path, index_col=0)
     df.index = pd.to_datetime(df.index)
+    df = df[df.index >= "2007-03-01"]  # TODO issue with the data
     return df
 
 

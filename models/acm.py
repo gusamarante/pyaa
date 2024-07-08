@@ -166,6 +166,11 @@ class NominalACM:
         """
         stds = self.pc_factors_m.std().values[:, None].T
         er_loadings = (self.beta.T @ self.lambda1) * stds
+        er_loadings = pd.DataFrame(
+            data=er_loadings,
+            columns=self.pc_factors_m.columns,
+            index=self.curve.columns[:-1],
+        )
 
         # Monthly
         exp_ret = (self.beta.T @ (self.lambda1 @ self.pc_factors_m.T + self.lambda0)).values

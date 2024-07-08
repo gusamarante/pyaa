@@ -70,6 +70,8 @@ class NominalACM:
         self.rny = self._affine_recursions(0, 0, X, r1)
         self.tp = self.miy - self.rny
 
+        self.exp_ret = self._expected_return()
+
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
         log_prices = - self.curve_monthly * ttm
@@ -154,6 +156,17 @@ class NominalACM:
             columns=self.curve.columns,
         )
         return fitted_yields
+
+    def _expected_return(self):
+        """
+        Compute the "expected return" and "convexity adjustment" terms, to get
+        the expected return loadings and historical estimate
+        """
+        stds = self.pc_factors_m.std().values[:, None].T
+        er_loadings = (self.beta.T @ self.lambda1) * stds
+
+        # TODO esse ER loadings é o efeito de um 1sd dos PCs no retorno esperado
+
 
     @staticmethod
     def vec(x):

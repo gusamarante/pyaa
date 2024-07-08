@@ -69,6 +69,7 @@ class NominalACM:
         self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
         self.rny = self._affine_recursions(0, 0, X, r1)
         self.tp = self.miy - self.rny
+        self.er_loadings, self.er_hist_m, self.er_hist_d = self._expected_return()
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
@@ -154,6 +155,39 @@ class NominalACM:
             columns=self.curve.columns,
         )
         return fitted_yields
+
+    def _expected_return(self):
+        """
+        Compute the "expected return" and "convexity adjustment" terms, to get
+        the expected return loadings and historical estimate
+
+        Loadings are interpreted as the effect of 1sd of the PCs on the
+        expected returns
+        """
+        stds = self.pc_factors_m.std().values[:, None].T
+        er_loadings = (self.beta.T @ self.lambda1) * stds
+
+        # Monthly
+        exp_ret = (self.beta.T @ (self.lambda1 @ self.pc_factors_m.T + self.lambda0)).values
+        conv_adj = np.diag(self.beta.T @ self.Sigma @ self.beta) + self.sigma2
+        er_hist = (exp_ret + conv_adj[:, None]).T
+        er_hist_m = pd.DataFrame(
+            data=er_hist,
+            index=self.pc_factors_m.index,
+            columns=self.curve.columns[:er_hist.shape[1]]
+        )
+
+        # Higher frequency
+        exp_ret = (self.beta.T @ (self.lambda1 @ self.pc_factors_d.T + self.lambda0)).values
+        conv_adj = np.diag(self.beta.T @ self.Sigma @ self.beta) + self.sigma2
+        er_hist = (exp_ret + conv_adj[:, None]).T
+        er_hist_d = pd.DataFrame(
+            data=er_hist,
+            index=self.pc_factors_d.index,
+            columns=self.curve.columns[:er_hist.shape[1]]
+        )
+
+        return er_loadings, er_hist_m, er_hist_d
 
     @staticmethod
     def vec(x):

@@ -83,6 +83,19 @@ plt.close()
 # ============================================
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
+curve_loadings = acm.pc_loadings_m
+curve_loadings.index = [int(m) for m in curve_loadings.index.str[:-1]]
+curve_loadings = curve_loadings * acm.pc_factors_m.std()
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.plot(curve_loadings, label=curve_loadings.columns)
+ax.axhline(0, color='black', lw=0.5)
+ax.set_title(f"Curve Loadings")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.set_xlabel("Maturity in Months")
+ax.legend(frameon=True, loc="best")
+
 er_loadings = acm.er_loadings
 er_loadings.index = [int(m) for m in acm.er_loadings.index.str[:-1]]
 
@@ -105,9 +118,43 @@ plt.close()
 # ===================================================
 # ===== Chart - Term Premium vs Expected Return =====
 # ===================================================
-# TODO implement this
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.plot(acm.tp['60m'], label='Term Premium')
+ax.plot(acm.er_hist_d['60m'], label='Expected Return')
+ax.axhline(0, color='black', lw=0.5)
+ax.set_title(f"5y DI Futures")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+ax.legend(frameon=True, loc="best")
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.plot(acm.tp['120m'], label='Term Premium')
+ax.plot(acm.er_hist_d['120m'], label='Expected Return')
+ax.axhline(0, color='black', lw=0.5)
+ax.set_title(f"10y DI Futures")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+ax.legend(frameon=True, loc="best")
+plt.tight_layout()
+
+plt.savefig(EMPIRICAL_FINANCE.joinpath("ACM BR - Term Premium VS Expected Return.pdf"))
+plt.show()
+plt.close()
+
 
 # =============================================================
 # ===== Chart - Cross Section of Expected Returns and Vol =====
 # =============================================================
+# TODO implement this
+
+
+# ===================================================
+# ===== Chart - Expected Return and Performance =====
+# ===================================================
 # TODO implement this

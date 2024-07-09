@@ -141,8 +141,8 @@ ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 ax.tick_params(rotation=90, axis="x")
 ax.legend(frameon=True, loc="best")
-plt.tight_layout()
 
+plt.tight_layout()
 plt.savefig(EMPIRICAL_FINANCE.joinpath("ACM BR - Term Premium VS Expected Return.pdf"))
 plt.show()
 plt.close()
@@ -151,7 +151,32 @@ plt.close()
 # =============================================================
 # ===== Chart - Cross Section of Expected Returns and Vol =====
 # =============================================================
-# TODO implement this
+# TODO relabel by number
+ret = acm.er_hist_d.iloc[-1]
+std = acm.rx_m.std()
+sharpe = ret / std
+
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.plot(std.values, ret.values, color=color_palette['blue'])
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel("Monthly Vol")
+ax.set_ylabel("Monthly Ret")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.tick_params(rotation=90, axis="x")
+# TODO Add mat labels
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.bar(sharpe.index, sharpe.values, color=color_palette['blue'])
+
+
+plt.tight_layout()
+# plt.savefig(EMPIRICAL_FINANCE.joinpath("ACM BR - Term Premium VS Expected Return.pdf"))
+plt.show()
+plt.close()
 
 
 # ===================================================

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from models import NominalACM
 from data import curve_di
 import matplotlib as mpl
+import numpy as np
 mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=list(color_palette.values()))
 
 size = 5
@@ -151,30 +152,37 @@ plt.close()
 # =============================================================
 # ===== Chart - Cross Section of Expected Returns and Vol =====
 # =============================================================
-# TODO relabel by number
 ret = acm.er_hist_d.iloc[-1]
+ret.index = [int(m) for m in ret.index.str[:-1]]
+
 std = acm.rx_m.std()
+std.index = [int(m) for m in std.index.str[:-1]]
+
 sharpe = ret / std
 
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
 ax = plt.subplot2grid((1, 2), (0, 0))
-ax.plot(std.values, ret.values, color=color_palette['blue'])
+ax.plot(std.values * np.sqrt(12), 12 * ret.values, color=color_palette['blue'])
 ax.axhline(0, color='black', lw=0.5)
 ax.axvline(0, color='black', lw=0.5)
 ax.set_xlabel("Monthly Vol")
-ax.set_ylabel("Monthly Ret")
+ax.set_ylabel("Monthly Return")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.tick_params(rotation=90, axis="x")
-# TODO Add mat labels
 
 ax = plt.subplot2grid((1, 2), (0, 1))
-ax.bar(sharpe.index, sharpe.values, color=color_palette['blue'])
+ax.bar(sharpe.index, sharpe.values, color=color_palette['blue'], width=1)
+ax.axhline(0, color='black', lw=0.5)
+ax.set_xlabel("Maturity in Months")
+ax.set_ylabel("Expected Sharpe Ratio")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 
 
 plt.tight_layout()
-# plt.savefig(EMPIRICAL_FINANCE.joinpath("ACM BR - Term Premium VS Expected Return.pdf"))
+plt.savefig(EMPIRICAL_FINANCE.joinpath("ACM BR - Cross Section Expected Returns.pdf"))
 plt.show()
 plt.close()
 

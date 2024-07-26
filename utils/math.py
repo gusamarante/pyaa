@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix
 
 
 def is_psd(mat):
@@ -27,10 +26,8 @@ def commutation_matrix(mat):
         k @ vec(mat) = vec(mat.T)
     """
     m, n = mat.shape
-    row = np.arange(m * n)
-    col = row.reshape((m, n), order='F').ravel()
-    data = np.ones(m * n)
-    k = csr_matrix((data, (row, col)), shape=(m * n, m * n))
+    w = np.arange(m * n).reshape((m, n), order="F").T.ravel(order="F")
+    k = np.eye(m * n)[w, :]
     return k
 
 

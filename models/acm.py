@@ -72,7 +72,7 @@ class NominalACM:
         self.rny = self._affine_recursions(0, 0, X, r1)
         self.tp = self.miy - self.rny
         self.er_loadings, self.er_hist_m, self.er_hist_d = self._expected_return()
-        self._inference()
+        self.z_lambda, self.z_beta = self._inference()
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
@@ -246,10 +246,10 @@ class NominalACM:
         sd_lambda = np.sqrt(np.diag(v_lambda).reshape(Lamb.shape, order='F'))
         sd_beta = np.sqrt(np.diag(v_beta).reshape(self.beta.shape, order='F'))
 
+        z_beta = pd.DataFrame(self.beta / sd_beta, index=self.pc_factors_m.columns, columns=self.curve.columns[:-1]).T
+        z_lambda = pd.DataFrame(Lamb / sd_lambda, index=self.pc_factors_m.columns, columns=[f"lambda {i}" for i in range(Lamb.shape[1])])
 
-        a = 1
-
-
+        return z_lambda, z_beta
 
     @staticmethod
     def vec_quad_form(x):

@@ -3,9 +3,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from models import NominalACM
 from data import curve_di
-import matplotlib as mpl
 import numpy as np
-mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=list(color_palette.values()))
 
 size = 5
 

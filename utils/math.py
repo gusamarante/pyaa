@@ -1,10 +1,37 @@
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 
 def is_psd(mat):
     ans = np.all(np.linalg.eigvals(mat) >= 0)
     return ans
+
+
+def vec(mat):
+    """
+    Stack the columns of mat into a column vector. If mat is a M x N matrix,
+    then vec(mat) is an MN X 1 vector
+    """
+    m, n = mat.shape
+    vec_mat = mat.reshape(m * n, order='F')
+    return vec_mat
+
+
+def commutation_matrix(mat):
+    """
+    Generates the commutation matrix for mat. The values of mat have no
+    influence in the output, only its shape affects the commutation matrix.
+
+    The definition of a commutation matrix is:
+        k @ vec(mat) = vec(mat.T)
+    """
+    m, n = mat.shape
+    row = np.arange(m * n)
+    col = row.reshape((m, n), order='F').ravel()
+    data = np.ones(m * n)
+    k = csr_matrix((data, (row, col)), shape=(m * n, m * n))
+    return k
 
 
 def make_psd(mat, method='abseig'):

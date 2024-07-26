@@ -210,6 +210,7 @@ class NominalACM:
         upsilon_zz = (1 / self.t) * Z @ Z.T
 
         v1 = np.kron(inv(upsilon_zz), self.Sigma)
+        v2 = 1  # TODO PAREI AQUI
 
     @staticmethod
     def vec_quad_form(x):

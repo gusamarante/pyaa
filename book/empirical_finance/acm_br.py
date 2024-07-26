@@ -19,7 +19,6 @@ acm = NominalACM(
 # =====================================================
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
-
 mat = "60m"
 ax = plt.subplot2grid((1, 2), (0, 0))
 ax.plot(di[mat], label='Observed', color=color_palette['blue'])

@@ -2,7 +2,7 @@ from sklearn.decomposition import PCA
 from numpy.linalg import inv
 import pandas as pd
 import numpy as np
-from utils.math import vec
+from utils.math import vec, commutation_matrix
 
 
 class NominalACM:
@@ -204,13 +204,52 @@ class NominalACM:
 
     def _inference(self):
 
+        # Auxiliary matrices
         Z = self.pc_factors_m.copy().T
         Z = Z.values[:, 1:]
         Z = np.vstack((np.ones((1, self.t)), Z))
-        upsilon_zz = (1 / self.t) * Z @ Z.T
 
+        Lamb = np.hstack((self.lambda0, self.lambda1))
+
+        rho1 = np.zeros((self.n_factors + 1, 1))
+        rho1[0, 0] = 1
+
+        A_beta = np.zeros((self.n_factors * self.beta.shape[1], self.beta.shape[1]))
+
+        for ii in range(self.beta.shape[1]):
+            A_beta[ii * self.beta.shape[0]:(ii + 1) * self.beta.shape[0], ii] = self.beta[:, ii]
+
+        BStar = np.squeeze(np.apply_along_axis(self.vec_quad_form, 1, self.beta.T))
+
+        comm_kk = commutation_matrix(shape=(self.n_factors, self.n_factors))
+
+        # Assymptotic variance terms
+        upsilon_zz = (1 / self.t) * Z @ Z.T
         v1 = np.kron(inv(upsilon_zz), self.Sigma)
-        v2 = 1  # TODO PAREI AQUI
+        v2 = self.sigma2 * np.kron(inv(upsilon_zz), inv(self.beta @ self.beta.T))
+        v3 = self.sigma2 * np.kron(Lamb.T @ self.Sigma @ Lamb, inv(self.beta @ self.beta.T))
+
+        v4_sim = inv(self.beta @ self.beta.T) @ self.beta @ A_beta.T
+        v4_mid = np.kron(np.eye(self.beta.shape[1]), self.Sigma)
+        v4 = self.sigma2 * np.kron(rho1 @ rho1.T, v4_sim @ v4_mid @ v4_sim.T)
+
+        v5_sim = inv(self.beta @ self.beta.T) @ self.beta @ BStar
+        v5_mid = (np.eye(self.n_factors ** 2) + comm_kk) @ np.kron(self.Sigma, self.Sigma)
+        v5 = 0.25 * np.kron(rho1 @ rho1.T, v5_sim @ v5_mid @ v5_sim.T)
+
+        v6_sim = inv(self.beta @ self.beta.T) @ self.beta @ np.ones((self.beta.shape[1], 1))
+        v6 = 0.5 * (self.sigma2 ** 2) * np.kron(rho1 @ rho1.T, v6_sim @ v6_sim.T)
+
+        v_lambda = v1 + v2 + v3 + v4 + v5 + v6
+        v_beta = self.sigma2 * np.kron(np.eye(self.beta.shape[1]), inv(self.Sigma))
+
+        sd_lambda = np.sqrt(np.diag(v_lambda).reshape(Lamb.shape, order='F'))
+        sd_beta = np.sqrt(np.diag(v_beta).reshape(self.beta.shape, order='F'))
+
+
+        a = 1
+
+
 
     @staticmethod
     def vec_quad_form(x):

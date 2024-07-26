@@ -1,6 +1,8 @@
 from sklearn.decomposition import PCA
+from numpy.linalg import inv
 import pandas as pd
 import numpy as np
+from utils.math import vec
 
 
 class NominalACM:
@@ -70,6 +72,7 @@ class NominalACM:
         self.rny = self._affine_recursions(0, 0, X, r1)
         self.tp = self.miy - self.rny
         self.er_loadings, self.er_hist_m, self.er_hist_d = self._expected_return()
+        self._inference()
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
@@ -129,12 +132,12 @@ class NominalACM:
     def _retrieve_lambda(self):
         BStar = np.squeeze(np.apply_along_axis(self.vec_quad_form, 1, self.beta.T))
         lambda1 = np.linalg.pinv(self.beta.T) @ self.c
-        lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ self.vec(self.Sigma) + self.sigma2))
+        lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ vec(self.Sigma) + self.sigma2))
         return lambda0, lambda1
 
     def _affine_recursions(self, lambda0, lambda1, X_in, r1):
         X = X_in.T.values[:, 1:]
-        r1 = self.vec(r1.values)[-X.shape[1]:, :]
+        r1 = vec(r1.values)[-X.shape[1]:, :]
 
         A = np.zeros((1, self.n))
         B = np.zeros((self.n_factors, self.n))
@@ -199,9 +202,15 @@ class NominalACM:
 
         return er_loadings, er_hist_m, er_hist_d
 
-    @staticmethod
-    def vec(x):
-        return np.reshape(x, (-1, 1))
+    def _inference(self):
 
-    def vec_quad_form(self, x):
-        return self.vec(np.outer(x, x))
+        Z = self.pc_factors_m.copy().T
+        Z = Z.values[:, 1:]
+        Z = np.vstack((np.ones((1, self.t)), Z))
+        upsilon_zz = (1 / self.t) * Z @ Z.T
+
+        v1 = np.kron(inv(upsilon_zz), self.Sigma)
+
+    @staticmethod
+    def vec_quad_form(x):
+        return vec(np.outer(x, x))

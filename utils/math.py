@@ -12,20 +12,23 @@ def vec(mat):
     Stack the columns of mat into a column vector. If mat is a M x N matrix,
     then vec(mat) is an MN X 1 vector
     """
-    m, n = mat.shape
-    vec_mat = mat.reshape(m * n, order='F')
+    vec_mat = mat.reshape((-1, 1), order='F')
     return vec_mat
 
 
-def commutation_matrix(mat):
+def commutation_matrix(shape):
     """
-    Generates the commutation matrix for mat. The values of mat have no
-    influence in the output, only its shape affects the commutation matrix.
+    Generates the commutation matrix for a matrix with shape equal to `shape`.
 
-    The definition of a commutation matrix is:
+    The definition of a commutation matrix `k` is:
         k @ vec(mat) = vec(mat.T)
+
+    Parameters
+    ----------
+    shape : tuple
+        2-d tuple (m, n) with the shape of `mat`
     """
-    m, n = mat.shape
+    m, n = shape
     w = np.arange(m * n).reshape((m, n), order="F").T.ravel(order="F")
     k = np.eye(m * n)[w, :]
     return k

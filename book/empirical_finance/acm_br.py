@@ -1,4 +1,5 @@
 from utils import EMPIRICAL_FINANCE, color_palette
+from plottable import ColDef, Table
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from models import NominalACM
@@ -187,7 +188,69 @@ plt.close()
 # ===================================================
 # ===== Chart - Significance of Beta and Lambda =====
 # ===================================================
-# TODO implement this
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.set_title(r"Inference on $\Lambda$", fontweight="bold")
+tab = Table(
+    df=acm.z_lambda,
+    ax=ax,
+    footer_divider=True,
+    column_definitions=[
+        ColDef(
+            name="index",
+            title="",
+            textprops={"ha": "left", "weight": "bold"},
+        ),
+        ColDef(
+            name="lambda 0",
+            formatter="{:.2f}",
+            textprops={"ha": "center"},
+        ),
+        ColDef(
+            name="lambda 1",
+            formatter="{:.2f}",
+            textprops={"ha": "center"},
+        ),
+        ColDef(
+            name="lambda 2",
+            formatter="{:.2f}",
+            textprops={"ha": "center"},
+        ),
+        ColDef(
+            name="lambda 3",
+            formatter="{:.2f}",
+            textprops={"ha": "center"},
+        ),
+        ColDef(
+            name="lambda 4",
+            formatter="{:.2f}",
+            textprops={"ha": "center"},
+        ),
+        ColDef(
+            name="lambda 5",
+            formatter="{:.2f}",
+            textprops={"ha": "center"},
+        ),
+    ],
+)
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.set_title(r"Inference on $\beta$", fontweight="bold")
+
+ax.plot(acm.z_beta.values, label=acm.z_beta.columns)
+ax.fill_between(range(120), -2, 2, color='grey', alpha=0.3)
+ax.axhline(0, color='black', lw=0.5)
+ax.set_xlabel("Maturity in Months")
+ax.set_ylabel("Z-stat")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+plt.savefig(EMPIRICAL_FINANCE.joinpath("ACM BR - Inference.pdf"))
+plt.show()
+plt.close()
 
 # ===================================================
 # ===== Chart - Expected Return and Performance =====

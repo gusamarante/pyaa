@@ -1,6 +1,8 @@
 from sklearn.decomposition import PCA
+from numpy.linalg import inv
 import pandas as pd
 import numpy as np
+from utils.math import vec, commutation_matrix
 
 
 class NominalACM:
@@ -70,6 +72,7 @@ class NominalACM:
         self.rny = self._affine_recursions(0, 0, X, r1)
         self.tp = self.miy - self.rny
         self.er_loadings, self.er_hist_m, self.er_hist_d = self._expected_return()
+        self.z_lambda, self.z_beta = self._inference()
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
@@ -129,12 +132,12 @@ class NominalACM:
     def _retrieve_lambda(self):
         BStar = np.squeeze(np.apply_along_axis(self.vec_quad_form, 1, self.beta.T))
         lambda1 = np.linalg.pinv(self.beta.T) @ self.c
-        lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ self.vec(self.Sigma) + self.sigma2))
+        lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ vec(self.Sigma) + self.sigma2))
         return lambda0, lambda1
 
     def _affine_recursions(self, lambda0, lambda1, X_in, r1):
         X = X_in.T.values[:, 1:]
-        r1 = self.vec(r1.values)[-X.shape[1]:, :]
+        r1 = vec(r1.values)[-X.shape[1]:, :]
 
         A = np.zeros((1, self.n))
         B = np.zeros((self.n_factors, self.n))
@@ -199,9 +202,65 @@ class NominalACM:
 
         return er_loadings, er_hist_m, er_hist_d
 
-    @staticmethod
-    def vec(x):
-        return np.reshape(x, (-1, 1))
+    def _inference(self):
 
-    def vec_quad_form(self, x):
-        return self.vec(np.outer(x, x))
+        # Auxiliary matrices
+        Z = self.pc_factors_m.copy().T
+        Z = Z.values[:, 1:]
+        Z = np.vstack((np.ones((1, self.t)), Z))
+
+        Lamb = np.hstack((self.lambda0, self.lambda1))
+
+        rho1 = np.zeros((self.n_factors + 1, 1))
+        rho1[0, 0] = 1
+
+        A_beta = np.zeros((self.n_factors * self.beta.shape[1], self.beta.shape[1]))
+
+        for ii in range(self.beta.shape[1]):
+            A_beta[ii * self.beta.shape[0]:(ii + 1) * self.beta.shape[0], ii] = self.beta[:, ii]
+
+        BStar = np.squeeze(np.apply_along_axis(self.vec_quad_form, 1, self.beta.T))
+
+        comm_kk = commutation_matrix(shape=(self.n_factors, self.n_factors))
+        comm_kn = commutation_matrix(shape=(self.n_factors, self.beta.shape[1]))
+
+        # Assymptotic variance of the betas
+        v_beta = self.sigma2 * np.kron(np.eye(self.beta.shape[1]), inv(self.Sigma))
+
+        # Assymptotic variance of the lambdas
+        upsilon_zz = (1 / self.t) * Z @ Z.T
+        v1 = np.kron(inv(upsilon_zz), self.Sigma)
+        v2 = self.sigma2 * np.kron(inv(upsilon_zz), inv(self.beta @ self.beta.T))
+        v3 = self.sigma2 * np.kron(Lamb.T @ self.Sigma @ Lamb, inv(self.beta @ self.beta.T))
+
+        v4_sim = inv(self.beta @ self.beta.T) @ self.beta @ A_beta.T
+        v4_mid = np.kron(np.eye(self.beta.shape[1]), self.Sigma)
+        v4 = self.sigma2 * np.kron(rho1 @ rho1.T, v4_sim @ v4_mid @ v4_sim.T)
+
+        v5_sim = inv(self.beta @ self.beta.T) @ self.beta @ BStar
+        v5_mid = (np.eye(self.n_factors ** 2) + comm_kk) @ np.kron(self.Sigma, self.Sigma)
+        v5 = 0.25 * np.kron(rho1 @ rho1.T, v5_sim @ v5_mid @ v5_sim.T)
+
+        v6_sim = inv(self.beta @ self.beta.T) @ self.beta @ np.ones((self.beta.shape[1], 1))
+        v6 = 0.5 * (self.sigma2 ** 2) * np.kron(rho1 @ rho1.T, v6_sim @ v6_sim.T)
+
+        v_lambda_tau = v1 + v2 + v3 + v4 + v5 + v6
+
+        c_lambda_tau_1 = np.kron(Lamb.T, inv(self.beta @ self.beta.T) @ self.beta)
+        c_lambda_tau_2 = np.kron(rho1, inv(self.beta @ self.beta.T) @ self.beta @ A_beta.T @ np.kron(np.eye(self.beta.shape[1]), self.Sigma))
+        c_lambda_tau = - c_lambda_tau_1 @ comm_kn @ v_beta @ c_lambda_tau_2.T
+
+        v_lambda = v_lambda_tau + c_lambda_tau + c_lambda_tau.T
+
+        # extract the z-tests
+        sd_lambda = np.sqrt(np.diag(v_lambda).reshape(Lamb.shape, order='F'))
+        sd_beta = np.sqrt(np.diag(v_beta).reshape(self.beta.shape, order='F'))
+
+        z_beta = pd.DataFrame(self.beta / sd_beta, index=self.pc_factors_m.columns, columns=self.curve.columns[:-1]).T
+        z_lambda = pd.DataFrame(Lamb / sd_lambda, index=self.pc_factors_m.columns, columns=[f"lambda {i}" for i in range(Lamb.shape[1])])
+
+        return z_lambda, z_beta
+
+    @staticmethod
+    def vec_quad_form(x):
+        return vec(np.outer(x, x))

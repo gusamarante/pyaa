@@ -222,8 +222,12 @@ class NominalACM:
         BStar = np.squeeze(np.apply_along_axis(self.vec_quad_form, 1, self.beta.T))
 
         comm_kk = commutation_matrix(shape=(self.n_factors, self.n_factors))
+        comm_kn = commutation_matrix(shape=(self.n_factors, self.beta.shape[1]))
 
-        # Assymptotic variance terms
+        # Assymptotic variance of the betas
+        v_beta = self.sigma2 * np.kron(np.eye(self.beta.shape[1]), inv(self.Sigma))
+
+        # Assymptotic variance of the lambdas
         upsilon_zz = (1 / self.t) * Z @ Z.T
         v1 = np.kron(inv(upsilon_zz), self.Sigma)
         v2 = self.sigma2 * np.kron(inv(upsilon_zz), inv(self.beta @ self.beta.T))
@@ -240,9 +244,15 @@ class NominalACM:
         v6_sim = inv(self.beta @ self.beta.T) @ self.beta @ np.ones((self.beta.shape[1], 1))
         v6 = 0.5 * (self.sigma2 ** 2) * np.kron(rho1 @ rho1.T, v6_sim @ v6_sim.T)
 
-        v_lambda = v1 + v2 + v3 + v4 + v5 + v6
-        v_beta = self.sigma2 * np.kron(np.eye(self.beta.shape[1]), inv(self.Sigma))
+        v_lambda_tau = v1 + v2 + v3 + v4 + v5 + v6
 
+        c_lambda_tau_1 = np.kron(Lamb.T, inv(self.beta @ self.beta.T) @ self.beta)
+        c_lambda_tau_2 = np.kron(rho1, inv(self.beta @ self.beta.T) @ self.beta @ A_beta.T @ np.kron(np.eye(self.beta.shape[1]), self.Sigma))
+        c_lambda_tau = - c_lambda_tau_1 @ comm_kn @ v_beta @ c_lambda_tau_2.T
+
+        v_lambda = v_lambda_tau + c_lambda_tau + c_lambda_tau.T
+
+        # extract the z-tests
         sd_lambda = np.sqrt(np.diag(v_lambda).reshape(Lamb.shape, order='F'))
         sd_beta = np.sqrt(np.diag(v_beta).reshape(self.beta.shape, order='F'))
 

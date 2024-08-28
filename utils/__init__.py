@@ -1,11 +1,12 @@
 from .charts import color_palette
-from .paths import AA_LECTURE, EMPIRICAL_FINANCE
+from .paths import AA_LECTURE, EMPIRICAL_FINANCE, STATISTICS_BAYESIAN
 from .performance import Performance, compute_eri
 from .stats import cov2corr, corr2cov
 
 __all__ = [
     "AA_LECTURE",
     "EMPIRICAL_FINANCE",
+    "STATISTICS_BAYESIAN",
     'color_palette',
     'compute_eri',
     'corr2cov',

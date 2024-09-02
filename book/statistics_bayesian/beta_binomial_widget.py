@@ -1,11 +1,14 @@
+"""
+Beta-Binomial conjugate with slider widget
+"""
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import numpy as np
-from scipy.special import gamma
 from scipy.stats import beta
 from pylab import Slider
 
-from utils import color_palette, STATISTICS_BAYESIAN
+from utils import color_palette
 
 size = 4
 n = 10

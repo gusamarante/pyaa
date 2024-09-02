@@ -8,8 +8,6 @@ import numpy as np
 from scipy.stats import beta
 from pylab import Slider
 
-from utils import color_palette
-
 size = 4
 n = 10
 
@@ -38,8 +36,8 @@ fig = plt.figure(figsize=(size * (16 / 7.3), size))
 fig.subplots_adjust(bottom=0.26)
 
 ax = plt.subplot2grid((1, 1), (0, 0))
-c_prior, = ax.plot(theta_grid, prior(theta_grid, 8, 2), label="Prior", lw=2, color=color_palette['blue'], ls='--')
-c_post, = ax.plot(theta_grid, post(theta_grid, 8, 8, 2), label=f"Posterior", lw=2, color=color_palette['blue'])
+c_prior, = ax.plot(theta_grid, prior(theta_grid, 8, 2), label="Prior", lw=2, color='tab:blue', ls='--')
+c_post, = ax.plot(theta_grid, post(theta_grid, 8, 8, 2), label=f"Posterior", lw=2, color='tab:blue')
 ax.set_xlim(0, 1)
 ax.set_ylim(0, None)
 ax.set_xlabel(r"$\theta$")

@@ -15,26 +15,26 @@ theta_grid = np.arange(
 )
 
 # item 2
-# fig = plt.figure(figsize=(size * (16 / 7.3), size))
-# ax = plt.subplot2grid((1, 1), (0, 0))
-# for a, b in params:
-#     gamma_pdf = gamma.pdf(theta_grid, a=a, scale=1/b)
-#     ax.plot(theta_grid, gamma_pdf, label=f"G({a},{b})", lw=2)
-#
-# # ax.axvline(theta_mle, label=f"MLE", lw=2, color=color_palette['yellow'], ls='--')
-# ax.set_xlim(0, None)
-# ax.set_ylim(0, None)
-# ax.set_xlabel(r"$\theta$")
-# ax.set_ylabel(r"Probability Density")
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(frameon=True, loc="best")
-#
-#
-# plt.tight_layout()
-# plt.savefig("/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW02/part 1 gamma plot.pdf")
-# plt.show()
-# plt.close()
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+ax = plt.subplot2grid((1, 1), (0, 0))
+for a, b in params:
+    gamma_pdf = gamma.pdf(theta_grid, a=a, scale=1/b)
+    ax.plot(theta_grid, gamma_pdf, label=f"G({a},{b})", lw=2)
+
+# ax.axvline(theta_mle, label=f"MLE", lw=2, color=color_palette['yellow'], ls='--')
+ax.set_xlim(0, None)
+ax.set_ylim(0, None)
+ax.set_xlabel(r"$\theta$")
+ax.set_ylabel(r"Probability Density")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="best")
+
+
+plt.tight_layout()
+plt.savefig("/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW02/part 1 gamma plot.pdf")
+plt.show()
+plt.close()
 
 
 # Itens 3 and 4

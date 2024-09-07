@@ -61,4 +61,29 @@ plt.show()
 plt.close()
 
 
+# =============================
+# ===== Item (i) Sampling =====
+# =============================
+m = 5000  # Samples from candidate
+n = 1000  # Weighted samples from set
+
+# Get samples from t distribution
+sample = t.rvs(df=3, size=m)
+
+# compute weights for target \pi_a
+w_a = norm.pdf(sample, loc=0, scale=1) / t.pdf(sample, df=3)
+w_a = w_a / w_a.sum()
+
+# compute weights for target \pi_b
+w_b = laplace.pdf(sample, loc=0, scale=1) / t.pdf(sample, df=3)
+w_b = w_b / w_b.sum()
+
+# draw for weighted set
+draws_a = np.random.choice(sample, p=w_a, size=n, replace=True)
+draws_b = np.random.choice(sample, p=w_b, size=n, replace=True)
+
+print("mean A", draws_a.mean())
+print("var A", draws_a.var())
+print("mean B", draws_b.mean())
+print("var B", draws_b.var())
 

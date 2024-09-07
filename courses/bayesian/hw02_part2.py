@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 m = 5000  # Samples from candidate
-n = 1000 # Weighted samples from set
+n = 1000  # Weighted samples from set
 
 inc = 0.1
 theta_grid = np.arange(
@@ -57,7 +57,7 @@ ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 
 plt.tight_layout()
-plt.savefig("/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW02/part 2 candidate target.pdf")
+plt.savefig("/Users/gamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW02/part 2 candidate target.pdf")
 plt.show()
 plt.close()
 
@@ -86,6 +86,9 @@ print("mean A", draws_a.mean())
 print("var A", draws_a.var())
 print("mean B", draws_b.mean())
 print("var B", draws_b.var())
+print("Tail A", (draws_a >= 2).mean())
+print("Tail B", (draws_b >= 2).mean())
+print("\n")
 
 
 # ==============================

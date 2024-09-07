@@ -18,31 +18,42 @@ laplace_pdf = laplace.pdf(theta_grid, loc=0, scale=1)
 
 
 # Chart comparing candidate and target densities
-size = 5
+size = 4
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
-axn = plt.subplot2grid((3, 2), (0, 0), rowspan=2)
-axn.plot(theta_grid, t_pdf, label=f"t(3)", lw=2)
-axn.plot(theta_grid, norm_pdf, label=f"N(0,1)", lw=2)
-axn.set_ylim(0, None)
+ax = plt.subplot2grid((3, 2), (0, 0), rowspan=2)
+ax.plot(theta_grid, t_pdf, label=f"t(3)", lw=2)
+ax.plot(theta_grid, norm_pdf, label=f"N(0,1)", lw=2)
+ax.set_ylim(0, None)
+ax.set_ylabel(r"Probability Density")
+ax.set_xlabel(r"$\theta$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="best")
 
-axwn = plt.subplot2grid((3, 2), (2, 0))
-axwn.plot(theta_grid, norm_pdf / t_pdf, label=f"Weight / Density Ratio", lw=2)
+ax = plt.subplot2grid((3, 2), (2, 0))
+ax.plot(theta_grid, norm_pdf / t_pdf, label=f"Weight / Density Ratio", lw=2)
+ax.set_ylabel(r"Density Ratio")
+ax.set_xlabel(r"$\theta$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 
-axl = plt.subplot2grid((3, 2), (0, 1), rowspan=2)
-axl.plot(theta_grid, t_pdf, label=f"t(3)", lw=2)
-axl.plot(theta_grid, laplace_pdf, label=f"Laplace(0,1)", lw=2)
-axl.set_ylim(0, None)
+ax = plt.subplot2grid((3, 2), (0, 1), rowspan=2)
+ax.plot(theta_grid, t_pdf, label=f"t(3)", lw=2)
+ax.plot(theta_grid, laplace_pdf, label=f"Laplace(0,1)", lw=2)
+ax.set_ylim(0, None)
+ax.set_ylabel(r"Probability Density")
+ax.set_xlabel(r"$\theta$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="best")
 
-axwl = plt.subplot2grid((3, 2), (2, 1))
-axwl.plot(theta_grid, laplace_pdf / t_pdf, label=f"Weight / Density Ratio", lw=2)
-
-for ax in [axn, axwn, axl, axwl]:
-    ax.set_xlabel(r"$\theta$")
-    ax.set_ylabel(r"Probability Density")
-    ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-    ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-    ax.legend(frameon=True, loc="best")
+ax = plt.subplot2grid((3, 2), (2, 1))
+ax.plot(theta_grid, laplace_pdf / t_pdf, label=f"Weight / Density Ratio", lw=2)
+ax.set_ylabel(r"Density Ratio")
+ax.set_xlabel(r"$\theta$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 
 plt.tight_layout()
 plt.savefig("/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW02/part 2 candidate target.pdf")

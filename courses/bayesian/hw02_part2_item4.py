@@ -8,14 +8,27 @@ m_values = [500, 5000, 50000, 500000]
 n_values = [100, 1000, 10000, 100000]
 r_times = 1000
 
+df = []
 for m in m_values:
     for n in n_values:
-        sample = t.rvs(df=3, size=m)
-        w_a = norm.pdf(sample, loc=0, scale=1) / t.pdf(sample, df=3)
-        w_a = w_a / w_a.sum()
-        draws_a = np.random.choice(sample, p=w_a, size=n, replace=True)
-        a = 1
-        # (draws_a >= 2).mean()
+        for r in range(r_times):
+            sample = t.rvs(df=3, size=m)
+            w_a = norm.pdf(sample, loc=0, scale=1) / t.pdf(sample, df=3)
+            w_a = w_a / w_a.sum()
+            draws_a = np.random.choice(sample, p=w_a, size=n, replace=True)
+
+            # TODO parei aqui
+            aux = pd.Series({
+                "M": m,
+                "N": n,
+                "prob": (draws_a >= 2).mean(),  # TODO VECTOR
+                "var prob": 2,
+            })
+            df.append(aux)
+
+df = pd.concat(df, axis=0)
+
+print(df)
 
 
 

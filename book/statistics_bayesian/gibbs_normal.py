@@ -16,7 +16,7 @@ from utils import STATISTICS_BAYESIAN
 y = np.array([2.68, 1.18, -0.97, -0.98, -1.03])
 n = len(y)
 
-n_samples = 10_000  # Number of sample from posterior
+n_samples = 50_000  # Number of sample from posterior
 
 # Initial Values
 mu = y.mean()
@@ -39,7 +39,7 @@ for s in tqdm(range(n_samples)):
 
     A = n / 2 + a
     B = ((y - mu)**2).sum() / 2 + b
-    sig2 = invgamma.rvs(a=A, scale=B)  # TODO this might be wrong
+    sig2 = invgamma.rvs(a=A, scale=B)
 
     samples.loc[s, "mu"] = mu
     samples.loc[s, "sigma"] = np.sqrt(sig2)
@@ -48,13 +48,28 @@ for s in tqdm(range(n_samples)):
 # =================
 # ===== Chart =====
 # =================
-g = sns.jointplot(data=samples, x="mu", y="sigma", alpha=0.3)
-g.plot_joint(sns.kdeplot, color="tab:orange", zorder=1, levels=8)
+g = sns.JointGrid(data=samples, x="mu", y="sigma")
+
+g.plot_joint(sns.scatterplot, alpha=0.4)
+g.plot_joint(sns.kdeplot, color="tab:red", zorder=1, levels=6)
+
+g.plot_marginals(sns.histplot, stat='density', edgecolor=None)
+
+mu_grid = np.linspace(start=samples["mu"].min(), stop=samples["mu"].max(), num=200)
+num = y.sum() / y.var() + gamma / tau
+denom = n / sig2 + 1 / tau
+mu_pdf = norm.pdf(mu_grid, loc=num/denom, scale=1/denom)
+g.ax_marg_x.plot(mu_grid, mu_pdf, color="tab:red")
+
+sigma_grid = np.linspace(start=0, stop=samples["sigma"].max(), num=200)
+A = n / 2 + a
+B = ((y - y.mean()) ** 2).sum() / 2 + b
+sigma_pdf = invgamma.pdf(sigma_grid**2, a=A, scale=B)
+g.ax_marg_y.plot(sigma_pdf, sigma_grid, color="tab:red")
+
 g.ax_joint.set_xlabel(r"$\mu$")
 g.ax_joint.set_ylabel(r"$\sigma$")
 
 plt.tight_layout()
 plt.savefig(STATISTICS_BAYESIAN.joinpath("Gibbs - Normal Joint Example.pdf"))
 plt.show()
-
-# TODO Compare conditional posteriors with marginal posteriors

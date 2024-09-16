@@ -51,7 +51,6 @@ for s in tqdm(range(n_samples)):
 g = sns.JointGrid(data=samples, x="mu", y="sigma")
 
 g.plot_joint(sns.scatterplot, alpha=0.4)
-g.plot_joint(sns.kdeplot, color="tab:red", zorder=1, levels=6)
 
 g.plot_marginals(sns.histplot, stat='density', edgecolor=None)
 

@@ -63,7 +63,7 @@ g.ax_marg_x.plot(mu_grid, mu_pdf, color="tab:red")
 sigma_grid = np.linspace(start=0, stop=samples["sigma"].max(), num=200)
 A = n / 2 + a
 B = ((y - y.mean()) ** 2).sum() / 2 + b
-sigma_pdf = invgamma.pdf(sigma_grid**2, a=A, scale=B)
+sigma_pdf = 2 * sigma_grid * invgamma.pdf(sigma_grid**2, a=A, scale=B)  # Adjustment for y = sqrt(x)
 g.ax_marg_y.plot(sigma_pdf, sigma_grid, color="tab:red")
 
 g.ax_joint.set_xlabel(r"$\mu$")

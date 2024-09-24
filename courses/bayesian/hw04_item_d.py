@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 n = 100  # Size of series
 n_gibbs = 1000  # Number of Gibbs samples
+burnin = 100
+n_tot = n_gibbs + burnin
 
 alpha = 0  # AR(1) Intercept
 beta = 1  # AR(1) Coefficient
@@ -45,7 +47,7 @@ a1 = 0
 R1 = 9
 R2 = R1 ** 2
 
-for ng in tqdm(range(1, n_gibbs + 1)):
+for ng in tqdm(range(1, n_tot + 1)):
     for nt in range(1, n + 1):
 
         if nt == 1:  # Start of the series
@@ -70,3 +72,24 @@ for ng in tqdm(range(1, n_gibbs + 1)):
             gibbs.loc[ng, nt] = norm.rvs(loc=Mmu, scale=Msig)
 
 cis = gibbs.quantile(q=[0.025, 0.5, 0.975])
+cis = cis.iloc[-n_gibbs:]
+
+
+# =================
+# ===== CHART =====
+# =================
+size = 5
+fig = plt.figure(figsize=(size * (16 / 9), size))
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.plot(cis.columns, obs, label=rf"Observed $y_t$", lw=2)
+ax.plot(cis.loc[0.5], label=rf"Median", lw=2)
+ax.fill_between(cis.columns, cis.loc[0.025], cis.loc[0.975], label="95% CI", lw=0, color='grey', alpha=0.3)
+ax.set_xlabel(r"$t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="best")
+
+plt.tight_layout()
+plt.savefig("/Users/gamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW04/ar1 gibbs.pdf")
+plt.show()
+plt.close()

@@ -130,7 +130,7 @@ ax = plt.subplot2grid((1, 1), (0, 0))
 ax.plot(cis.columns[:-4], obs, label=rf"Observed $y_t$", lw=2)
 ax.plot(cis.iloc[:, :-4].loc[0.5], label=rf"Median", lw=2)
 # TODO Make the chart work
-ax.fill_between(cis.columns[:-4], cis.iloc[:, :-4].loc[0.025], cis.iloc[:, :-4].loc[0.975], label="95% CI", lw=0, color='grey', alpha=0.3)
+ax.fill_between(cis.columns[:-4].values.astype(int), cis.iloc[:, :-4].loc[0.025], cis.iloc[:, :-4].loc[0.975], label="95% CI", lw=0, color='grey', alpha=0.3)
 ax.set_xlabel(r"$t$")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)

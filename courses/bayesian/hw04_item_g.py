@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 n = 100  # Size of series
-n_gibbs = 100  # Number of Gibbs samples
+n_gibbs = 10000  # Number of Gibbs samples
 burnin = 100
 n_tot = n_gibbs + burnin
 
@@ -15,6 +15,9 @@ real_alpha = 0  # AR(1) Intercept
 real_beta = 1  # AR(1) Coefficient
 tau = np.sqrt(1)  # AR(1) Noise
 sigma_y = np.sqrt(0.25)  # Observation Error
+
+tau2 = tau**2
+sig2 = sigma_y**2
 
 
 def simul_ar1(phi0, phi1, sigma_e, sigma_omg):
@@ -36,9 +39,69 @@ obs = simul_ar1(
 )
 
 
-# ===========================
-# ===== Gibbs samplings =====
-# ===========================
+# ====================================
+# ===== Gibbs Samplings on Theta =====
+# ====================================
+gibbs_theta = pd.DataFrame(
+    columns=[k + 1 for k in range(n)],
+)
+gibbs_theta.loc[0] = obs
+
+a1 = 0
+R1 = 9
+R2 = R1 ** 2
+
+for ng in tqdm(range(1, n_tot + 1), "Gibbs on Theta"):
+    for nt in range(1, n + 1):
+
+        if nt == 1:  # Start of the series
+            T1 = sig2 * R2 * real_alpha * real_beta - tau2 * R2 * obs[0] - sig2 * R2 * real_beta * gibbs_theta.loc[ng-1, 2] - sig2 * tau2 * a1
+            T2 = tau2 * R2 + sig2 * R2 * (real_beta**2) + sig2 * tau2
+            Tmu = - T1 / T2
+            Tsig = np.sqrt(sig2 * tau2 * R2 / T2)
+            gibbs_theta.loc[ng, nt] = norm.rvs(loc=Tmu, scale=Tsig)
+
+        elif nt == n:  # End of the series
+            Q1 = - tau2 * obs[-1] - sig2 * real_alpha - sig2 * real_beta * gibbs_theta.loc[ng, nt - 1]
+            Q2 = sig2 + tau2
+            Qmu = - Q1 / Q2
+            Qsig = np.sqrt(sig2 * tau2 / Q2)
+            gibbs_theta.loc[ng, nt] = norm.rvs(loc=Qmu, scale=Qsig)
+
+        else:  # Somewhere in the middle
+            M1 = sig2 * real_alpha * real_beta - tau2 * obs[nt - 1] - sig2 * real_beta * gibbs_theta.loc[ng - 1, nt + 1] - sig2 * real_alpha - sig2 * real_beta * gibbs_theta.loc[ng, nt - 1]
+            M2 = tau2 + sig2 * (real_beta ** 2) + sig2
+            Mmu = - M1 / M2
+            Msig = np.sqrt(sig2 * tau2 / M2)
+            gibbs_theta.loc[ng, nt] = norm.rvs(loc=Mmu, scale=Msig)
+
+gibbs_theta = gibbs_theta.iloc[-n_gibbs:]
+cis_theta = gibbs_theta.quantile(q=[0.025, 0.5, 0.975])
+
+
+# =======================================
+# ===== CHART - Gibbs only on theta =====
+# =======================================
+size = 5
+fig = plt.figure(figsize=(size * (16 / 9), size))
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.plot(cis_theta.columns, obs, label=rf"Observed $y_t$", lw=2)
+ax.plot(cis_theta.loc[0.5], label=rf"Median", lw=2)
+ax.fill_between(cis_theta.columns, cis_theta.loc[0.025], cis_theta.loc[0.975], label="95% CI", lw=0, color='grey', alpha=0.3)
+ax.set_xlabel(r"$t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="best")
+
+plt.tight_layout()
+plt.savefig("/Users/gamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW04/ar1 gibbs.pdf")
+plt.show()
+plt.close()
+
+
+# ================================
+# ===== Full Gibbs Samplings =====
+# ================================
 a_sigma = 1
 b_sigma = 1
 
@@ -67,7 +130,7 @@ R1 = 9
 R2 = R1 ** 2
 delta = 9
 
-for ng in tqdm(range(1, n_tot + 1)):
+for ng in tqdm(range(1, n_tot + 1), "Full Gibbs"):
 
     # --- Sample thetas ---
     for nt in range(1, n + 1):
@@ -129,7 +192,6 @@ fig = plt.figure(figsize=(size * (16 / 9), size))
 ax = plt.subplot2grid((1, 1), (0, 0))
 ax.plot(cis.columns[:-4], obs, label=rf"Observed $y_t$", lw=2)
 ax.plot(cis.iloc[:, :-4].loc[0.5], label=rf"Median", lw=2)
-# TODO Make the chart work
 ax.fill_between(cis.columns[:-4].values.astype(int), cis.iloc[:, :-4].loc[0.025], cis.iloc[:, :-4].loc[0.975], label="95% CI", lw=0, color='grey', alpha=0.3)
 ax.set_xlabel(r"$t$")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
@@ -140,3 +202,23 @@ plt.tight_layout()
 plt.savefig("/Users/gamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW04/ar1 gibbs 2.pdf")
 plt.show()
 plt.close()
+
+
+# ====================================
+# ===== CHART - Compare CI width =====
+# ====================================
+size = 5
+fig = plt.figure(figsize=(size * (16 / 9), size))
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.plot(cis_theta.loc[0.975] - cis_theta.loc[0.025], label='Only Theta')
+ax.plot(cis.iloc[:, :-4].loc[0.975] - cis.iloc[:, :-4].loc[0.025], label='Full')
+ax.set_xlabel(r"$t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="best")
+
+plt.tight_layout()
+plt.savefig("/Users/gamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - Bayesiana/HW04/compare cis.pdf")
+plt.show()
+plt.close()
+

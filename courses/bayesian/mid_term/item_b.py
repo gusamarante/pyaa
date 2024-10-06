@@ -3,7 +3,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
-from tqdm import tqdm
 
 
 df = pd.read_excel('/Users/gustavoamarante/Dropbox/Aulas/Doutorado - Bayesiana/Mid Term/Dados.xlsx',

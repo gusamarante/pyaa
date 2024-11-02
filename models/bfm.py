@@ -27,14 +27,13 @@ class BFM:
         self.mu_y = self.y.mean()
         self.Sigma_y = self.y.cov()
 
-        # TODO organize these in DataFrames
+        # TODO better breakdown of the functions and steps
         self.draws_mu_y, self.draws_Sigma_y = self._draw_mu_sigma()
         self.draws_betas, draws_lambdas = self._compute_beta_lambda()
         self.draws_lambdas = pd.DataFrame(
             data=draws_lambdas,
             columns=factors.columns
         )
-
 
     def _draw_mu_sigma(self):
         # TODO Documentation
@@ -95,7 +94,35 @@ class BFM:
 
 
 class BFMGLS(BFM):
-    pass
+    # TODO Documentation
+
+    def _compute_beta_lambda(self):
+        # TODO Documentation
+        # compute betas from sigma draws
+        draws_beta = np.array(
+            [
+                cov[:self.n, -self.k:] @ inv(cov[-self.k:, -self.k:])
+                for cov in self.draws_Sigma_y
+            ]
+        )
+
+        # compute idiosyncratic error covariance
+        draws_sige = np.array(
+            [
+                cov[:self.n, :self.n] - cov[:self.n, -self.k:] @ inv(cov[-self.k:, -self.k:]) @ cov[:self.n, -self.k:].T
+                for cov in self.draws_Sigma_y
+            ]
+        )
+
+        # campute lambdas from betas and mus
+        draws_lambda = np.array(
+            [
+                inv(b.T @ inv(sige) @ b) @ b.T @ inv(sige) @ mu[:self.n]
+                for mu, b, sige in zip(self.draws_mu_y, draws_beta, draws_sige)
+            ]
+        )
+
+        return draws_beta, draws_lambda
 
 
 # TODO TESTING - ERASE THIS
@@ -109,10 +136,10 @@ ports.columns = [f"FF{(s - 1) * 5 + v}" for s, v in ports.columns]
 facts = get_ff5f()
 
 tic = time()
-bfm = BFM(
+bfm = BFMGLS(
     assets=ports,
     factors=facts,
-    n_draws=1000,
+    n_draws=10000,
 )
 bfm.plot_lambda()
 print(time() - tic)

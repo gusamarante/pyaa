@@ -104,7 +104,6 @@ class BFM:
         return table
 
 
-
 class BFMGLS(BFM):
     # TODO Documentation
 

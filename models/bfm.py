@@ -7,11 +7,13 @@ import pandas as pd
 import numpy as np
 from numpy.linalg import inv
 from time import time
+import matplotlib.pyplot as plt
 
 
 class BFM:
 
-    def __init__(self, assets, factors, n_draws=100):
+    def __init__(self, assets, factors, n_draws=1000):
+        # TODO Documentation
         self.assets = assets
         self.factors = factors
         self.n_draws = n_draws
@@ -25,10 +27,17 @@ class BFM:
         self.mu_y = self.y.mean()
         self.Sigma_y = self.y.cov()
 
+        # TODO organize these in DataFrames
         self.draws_mu_y, self.draws_Sigma_y = self._draw_mu_sigma()
-        self.draws_betas, self.draws_lambdas = self._compute_beta_lambda()
+        self.draws_betas, draws_lambdas = self._compute_beta_lambda()
+        self.draws_lambdas = pd.DataFrame(
+            data=draws_lambdas,
+            columns=factors.columns
+        )
+
 
     def _draw_mu_sigma(self):
+        # TODO Documentation
 
         # Draws covariance from inverse wishart
         draws_sigma = invwishart.rvs(
@@ -51,7 +60,7 @@ class BFM:
         return draws_mu, draws_sigma
 
     def _compute_beta_lambda(self):
-
+        # TODO Documentation
         # compute betas from sigma draws
         draws_beta = np.array(
             [
@@ -69,6 +78,20 @@ class BFM:
         )
 
         return draws_beta, draws_lambda
+
+    def plot_lambda(self):
+        axes = self.draws_lambdas.hist(
+            density=True,
+            bins=int(np.sqrt(self.n_draws)),
+            sharex=True,
+            figsize=(10, 6)
+        )
+
+        for ax in axes.flatten():
+            ax.axvline(0, color='tab:orange', lw=1)
+
+        plt.tight_layout()
+        plt.show()
 
 
 class BFMGLS(BFM):
@@ -89,6 +112,7 @@ tic = time()
 bfm = BFM(
     assets=ports,
     factors=facts,
-    n_draws=100,
+    n_draws=1000,
 )
+bfm.plot_lambda()
 print(time() - tic)

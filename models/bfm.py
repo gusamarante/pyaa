@@ -92,6 +92,18 @@ class BFM:
         plt.tight_layout()
         plt.show()
 
+    def ci_table_lambda(self, cred=0.95):
+        # TODO Documentation
+        table = self.draws_lambdas.quantile(
+            q=[
+                (1 - cred) / 2,
+                0.5,
+                (1 + cred) / 2,
+            ],
+        )
+        return table
+
+
 
 class BFMGLS(BFM):
     # TODO Documentation
@@ -141,5 +153,5 @@ bfm = BFMGLS(
     factors=facts,
     n_draws=10000,
 )
-bfm.plot_lambda()
 print(time() - tic)
+bfm.ci_table_lambda()

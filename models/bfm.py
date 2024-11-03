@@ -1,13 +1,14 @@
 """
 Bayesian Fama-MacBeth
 """
-from data import get_ffrf, get_ff5f, get_ff25p
-from scipy.stats import invwishart, multivariate_normal
-import pandas as pd
-import numpy as np
-from numpy.linalg import inv
-from time import time
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+from data import get_ffrf, get_ff5f, get_ff25p
+from numpy.linalg import inv
+from scipy.stats import invwishart, multivariate_normal
+from time import time
 
 
 class BFM:
@@ -29,7 +30,9 @@ class BFM:
 
         # TODO better breakdown of the functions and steps
         self.draws_mu_y, self.draws_Sigma_y = self._draw_mu_sigma()
-        self.draws_betas, draws_lambdas = self._compute_beta_lambda()
+        self.draws_betas = self._compute_betas()
+
+        draws_lambdas = self._compute_lambdas()
         self.draws_lambdas = pd.DataFrame(
             data=draws_lambdas,
             columns=factors.columns
@@ -58,25 +61,27 @@ class BFM:
 
         return draws_mu, draws_sigma
 
-    def _compute_beta_lambda(self):
+    def _compute_betas(self):
         # TODO Documentation
-        # compute betas from sigma draws
         draws_beta = np.array(
             [
                 cov[:self.n, -self.k:] @ inv(cov[-self.k:, -self.k:])
                 for cov in self.draws_Sigma_y
             ]
         )
+        return draws_beta
 
+    def _compute_lambdas(self):
+        # TODO Documentation
         # campute lambdas from betas and mus
         draws_lambda = np.array(
             [
                 inv(b.T @ b) @ b.T @ mu[:self.n]
-                for mu, b in zip(self.draws_mu_y, draws_beta)
+                for mu, b in zip(self.draws_mu_y, self.draws_betas)
             ]
         )
 
-        return draws_beta, draws_lambda
+        return draws_lambda
 
     def plot_lambda(self):
         axes = self.draws_lambdas.hist(
@@ -107,16 +112,8 @@ class BFM:
 class BFMGLS(BFM):
     # TODO Documentation
 
-    def _compute_beta_lambda(self):
+    def _compute_lambdas(self):
         # TODO Documentation
-        # compute betas from sigma draws
-        draws_beta = np.array(
-            [
-                cov[:self.n, -self.k:] @ inv(cov[-self.k:, -self.k:])
-                for cov in self.draws_Sigma_y
-            ]
-        )
-
         # compute idiosyncratic error covariance
         draws_sige = np.array(
             [
@@ -129,11 +126,11 @@ class BFMGLS(BFM):
         draws_lambda = np.array(
             [
                 inv(b.T @ inv(sige) @ b) @ b.T @ inv(sige) @ mu[:self.n]
-                for mu, b, sige in zip(self.draws_mu_y, draws_beta, draws_sige)
+                for mu, b, sige in zip(self.draws_mu_y, self.draws_betas, draws_sige)
             ]
         )
 
-        return draws_beta, draws_lambda
+        return draws_lambda
 
 
 # TODO TESTING - ERASE THIS
@@ -150,7 +147,8 @@ tic = time()
 bfm = BFMGLS(
     assets=ports,
     factors=facts,
-    n_draws=10000,
+    n_draws=100000,
 )
 print(time() - tic)
-bfm.ci_table_lambda()
+print(bfm.ci_table_lambda())
+bfm.plot_lambda()

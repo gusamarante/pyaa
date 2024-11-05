@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from data import get_ffrf, get_ff5f, get_ff25p
-from numpy.linalg import inv
+from numpy.linalg import inv, svd
 from scipy.stats import invwishart, multivariate_normal
 from time import time
 
@@ -21,14 +21,12 @@ class BFM:
         self.y = pd.concat([assets, factors], axis=1).dropna()
 
         self.t = self.y.shape[0]
-        self.n = assets.shape[1]
-        self.k = factors.shape[1]
-        self.p = self.n + self.k
+        self.n = assets.shape[1]  # Number of assets
+        self.k = factors.shape[1]  # Number of factors
 
         self.mu_y = self.y.mean()
         self.Sigma_y = self.y.cov()
 
-        # TODO better breakdown of the functions and steps
         self.draws_mu_y, self.draws_Sigma_y = self._draw_mu_sigma()
         self.draws_betas = self._compute_betas()
 
@@ -133,6 +131,36 @@ class BFMGLS(BFM):
         return draws_lambda
 
 
+class BFMOMIT(BFM):
+    # TODO Documentation
+
+    def __init__(self, assets, factors, n_draws=1000, p=5):
+        self.p = p
+        super().__init__(assets, factors, n_draws)
+
+    def _compute_lambdas(self):
+        # TODO Documentation
+        def cov_svd(cov):
+            u, s, _ = svd(cov)
+            return (u @ np.diag(s))[:, :self.p]
+
+        draws_beta_upsilon = np.array(
+            [
+                cov_svd(cov[:self.n, :self.n])
+                for cov in self.draws_Sigma_y
+            ]
+        )
+
+        draws_lambda_upsilon = np.array(
+            [
+                inv(b.T @ b) @ b.T @ mu[:self.n]
+                for b, mu in zip(draws_beta_upsilon, self.draws_mu_y)
+            ]
+        )
+
+        # TODO parei nos draws do lambda_f
+
+
 # TODO TESTING - ERASE THIS
 # Fama-French Portfolios - Excess Returns
 ports = get_ff25p()
@@ -144,10 +172,10 @@ ports.columns = [f"FF{(s - 1) * 5 + v}" for s, v in ports.columns]
 facts = get_ff5f()
 
 tic = time()
-bfm = BFMGLS(
+bfm = BFMOMIT(
     assets=ports,
     factors=facts,
-    n_draws=100000,
+    n_draws=1000,
 )
 print(time() - tic)
 print(bfm.ci_table_lambda())

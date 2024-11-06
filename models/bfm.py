@@ -10,6 +10,8 @@ from numpy.linalg import inv, svd
 from scipy.stats import invwishart, multivariate_normal
 from time import time
 
+# TODO add the R2 for each case
+
 
 class BFM:
 

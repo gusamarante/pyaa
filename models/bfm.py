@@ -10,6 +10,24 @@ from time import time
 # TODO add frequentist FM to charts
 
 
+class FM:
+
+    def __init__(self, assets, factors):
+
+        self.beta = pd.DataFrame(
+            data=(inv(factors.T @ factors) @ factors.T @ assets).values,
+            columns=assets.columns,
+            index=factors.columns,
+        ).T
+
+        mu = assets.mean()
+        self.lambdas = pd.Series(
+            data=(inv(self.beta.T @ self.beta) @ self.beta.T @ mu).values,
+            index=factors.columns,
+            name="Lambdas",
+        )
+
+
 class BFM:
     # TODO Documentation
 
@@ -268,14 +286,14 @@ ports.columns = [f"FF{(s - 1) * 5 + v}" for s, v in ports.columns]
 facts = get_ff5f()
 
 tic = time()
-bfm = BFMOMIT(
+bfm = FM(
     assets=ports,
     factors=facts,
-    n_draws=10000,
-    p=3,
+    # n_draws=10000,
+    # p=3,
 )
 print(time() - tic)
-print(bfm.ci_table_lambda())
-print(bfm.ci_table_r2())
-bfm.plot_lambda()
-bfm.plot_r2()
+# print(bfm.ci_table_lambda())
+# print(bfm.ci_table_r2())
+# bfm.plot_lambda()
+# bfm.plot_r2()

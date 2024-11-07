@@ -1,6 +1,3 @@
-"""
-Bayesian Fama-MacBeth
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,10 +7,11 @@ from numpy.linalg import inv, svd
 from scipy.stats import invwishart, multivariate_normal
 from time import time
 
-# TODO add the R2 for each case
+# TODO add frequentist FM to charts
 
 
 class BFM:
+    # TODO Documentation
 
     def __init__(self, assets, factors, n_draws=1000):
         # TODO Documentation
@@ -32,10 +30,17 @@ class BFM:
         self.draws_mu_y, self.draws_Sigma_y = self._draw_mu_sigma()
         self.draws_betas = self._compute_betas()
 
-        draws_lambdas = self._compute_lambdas()
+        self.draws_lambdas = self._compute_lambdas()
+        self.draws_r2 = self._compute_r2()
+
+        # Reorganize in Pandas
         self.draws_lambdas = pd.DataFrame(
-            data=draws_lambdas,
+            data=self.draws_lambdas,
             columns=factors.columns
+        )
+        self.draws_r2 = pd.Series(
+            data=self.draws_r2,
+            name="R2",
         )
 
     def _draw_mu_sigma(self):
@@ -83,6 +88,16 @@ class BFM:
 
         return draws_lambda
 
+    def _compute_r2(self):
+        # TODO Documentation
+        mu_r = self.mu_y[:self.n].values
+        denom = (mu_r - mu_r.mean()) @ (mu_r - mu_r.mean())
+        draws_r2 = [
+            1 - ((mu_r - b @ l) @ (mu_r - b @ l)) / denom
+            for b, l in zip(self.draws_betas, self.draws_lambdas)
+        ]
+        return draws_r2
+
     def plot_lambda(self):
         axes = self.draws_lambdas.hist(
             density=True,
@@ -97,9 +112,33 @@ class BFM:
         plt.tight_layout()
         plt.show()
 
+    def plot_r2(self):
+        # TODO Documentation
+        axes = self.draws_r2.hist(
+            density=True,
+            bins=int(np.sqrt(self.n_draws)),
+            figsize=(10, 6)
+        )
+
+        axes.axvline(0, color='tab:orange', lw=1)
+
+        plt.tight_layout()
+        plt.show()
+
     def ci_table_lambda(self, cred=0.95):
         # TODO Documentation
         table = self.draws_lambdas.quantile(
+            q=[
+                (1 - cred) / 2,
+                0.5,
+                (1 + cred) / 2,
+            ],
+        )
+        return table
+
+    def ci_table_r2(self, cred=0.95):
+        # TODO Documentation
+        table = self.draws_r2.quantile(
             q=[
                 (1 - cred) / 2,
                 0.5,
@@ -132,6 +171,24 @@ class BFMGLS(BFM):
 
         return draws_lambda
 
+    def _compute_r2(self):
+        # TODO Documentation
+        draws_sige = np.array(
+            [
+                cov[:self.n, :self.n] - cov[:self.n, -self.k:] @ inv(cov[-self.k:, -self.k:]) @ cov[:self.n, -self.k:].T
+                for cov in self.draws_Sigma_y
+            ]
+        )
+
+        mu_r = self.mu_y[:self.n].values
+        mu_r_bar = mu_r.mean()
+
+        draws_r2 = [
+            1 - ((mu_r - b @ l) @ inv(sige) @ (mu_r - b @ l)) / ((mu_r - mu_r_bar) @ inv(sige) @ (mu_r - mu_r_bar))
+            for b, l, sige in zip(self.draws_betas, self.draws_lambdas, draws_sige)
+        ]
+        return draws_r2
+
 
 class BFMOMIT(BFM):
     # TODO Documentation
@@ -160,7 +217,44 @@ class BFMOMIT(BFM):
             ]
         )
 
-        # TODO parei nos draws do lambda_f
+        draws_lambda_f = np.array(
+            [
+                lu.T @ inv(bu.T @ bu) @ bu.T @ cov[:self.n, -self.k:]
+                for lu, bu, cov in zip(draws_lambda_upsilon, draws_beta_upsilon, self.draws_Sigma_y)
+            ]
+        )
+
+        return draws_lambda_f
+
+    def _compute_r2(self):
+        # TODO Documentation
+        def cov_svd(cov):
+            u, s, _ = svd(cov)
+            return (u @ np.diag(s))[:, :self.p]
+
+        draws_beta_upsilon = np.array(
+            [
+                cov_svd(cov[:self.n, :self.n])
+                for cov in self.draws_Sigma_y
+            ]
+        )
+
+        draws_lambda_upsilon = np.array(
+            [
+                inv(b.T @ b) @ b.T @ mu[:self.n]
+                for b, mu in zip(draws_beta_upsilon, self.draws_mu_y)
+            ]
+        )
+
+        mu_r = self.mu_y[:self.n].values
+        mu_r_bar = mu_r.mean()
+        draws_r2 = np.array(
+            [
+                1 - ((mu_r - bu @ lu) @ (mu_r - bu @ lu)) / ((mu_r - mu_r_bar) @ (mu_r - mu_r_bar))
+                for lu, bu in zip(draws_lambda_upsilon, draws_beta_upsilon)
+            ]
+        )
+        return draws_r2
 
 
 # TODO TESTING - ERASE THIS
@@ -177,8 +271,11 @@ tic = time()
 bfm = BFMOMIT(
     assets=ports,
     factors=facts,
-    n_draws=1000,
+    n_draws=10000,
+    p=3,
 )
 print(time() - tic)
 print(bfm.ci_table_lambda())
+print(bfm.ci_table_r2())
 bfm.plot_lambda()
+bfm.plot_r2()

@@ -116,7 +116,7 @@ class BFM:
         ]
         return draws_r2
 
-    def plot_lambda(self):
+    def plot_lambda(self, include_fm=False):
         axes = self.draws_lambdas.hist(
             density=True,
             bins=int(np.sqrt(self.n_draws)),
@@ -124,8 +124,17 @@ class BFM:
             figsize=(10, 6)
         )
 
-        for ax in axes.flatten():
-            ax.axvline(0, color='tab:orange', lw=1)
+        if include_fm:
+            fm = FM(self.assets, self.factors)
+            for ax in axes.flatten():
+                try:
+                    ax.axvline(
+                        fm.lambdas[ax.title.get_text()],
+                        color='tab:orange',
+                        lw=2,
+                    )
+                except KeyError:
+                    continue
 
         plt.tight_layout()
         plt.show()
@@ -286,14 +295,14 @@ ports.columns = [f"FF{(s - 1) * 5 + v}" for s, v in ports.columns]
 facts = get_ff5f()
 
 tic = time()
-bfm = FM(
+bfm = BFMOMIT(
     assets=ports,
     factors=facts,
-    # n_draws=10000,
-    # p=3,
+    n_draws=10000,
+    p=10,
 )
 print(time() - tic)
 # print(bfm.ci_table_lambda())
 # print(bfm.ci_table_r2())
-# bfm.plot_lambda()
+bfm.plot_lambda(include_fm=True)
 # bfm.plot_r2()

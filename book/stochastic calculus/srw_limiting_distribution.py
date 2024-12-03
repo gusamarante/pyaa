@@ -19,7 +19,7 @@ def get_srw_dist(n, t):
 # Chart
 fig = plt.figure(figsize=(7 , 7))
 t_plot = 0.2
-possible_ns = [500, 160, 80, 20, 5]
+possible_ns = [500, 250, 100, 20, 5]
 for count, n_plot in enumerate(possible_ns):
 
     dist = get_srw_dist(n_plot, t_plot)
@@ -33,7 +33,9 @@ for count, n_plot in enumerate(possible_ns):
 
     ax.bar(dist['srw'], dist['probs'],
            width=dist['srw'].diff(1).mean(),
-           edgecolor='black')
+           edgecolor='black',
+           label=fr"$W_{{0.2}}^{{\left({n_plot}\right)}}$")
+    ax.legend(loc="upper right")
 
 plt.tight_layout()
 plt.savefig(STOCHASTIC_CALCULUS.joinpath("Brownian Motion - Limiting Distribution Convergence.pdf"))

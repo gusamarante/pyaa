@@ -94,3 +94,16 @@ def trackers_ntnf():
     df = pd.read_csv(file_path, index_col=0)
     df.index = pd.to_datetime(df.index)
     return df
+
+
+# ==============
+# ===== US =====
+# ==============
+def us_zero_curve():
+    data = pd.read_excel(
+        input_path.joinpath(f'us_yield_curve.xlsx'),
+        index_col=0,
+    )
+    data = data.dropna()
+    data.index = pd.to_datetime(data.index)
+    return data

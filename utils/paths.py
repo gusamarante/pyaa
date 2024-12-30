@@ -1,8 +1,11 @@
 from getpass import getuser
 from pathlib import Path
 
-
+# Lectures
 AA_LECTURE = Path(f"/Users/{getuser()}/Dropbox/Aulas/Insper - Asset Allocation")
+
+# Book Chapters
+ASSET_ALLOCATION = Path(f"/Users/{getuser()}/Dropbox/Livros/Asset Allocation/figures")
 
 EMPIRICAL_FINANCE = Path(f"/Users/{getuser()}/Dropbox/Livros/Empirical Finance/figures")
 

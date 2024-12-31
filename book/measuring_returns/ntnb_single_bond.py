@@ -9,6 +9,7 @@ last_year = 2024
 notional_start = 100
 start_date = '2006-01-01'
 size = 5
+show_chart = False
 
 # Read the Data
 ntnb = raw_ntnb()
@@ -47,7 +48,10 @@ plt.tight_layout()
 
 plt.savefig(AA_LECTURE.joinpath('Figures/Measuring Returns - Single NTNB Total Return.pdf'))
 plt.savefig(ASSET_ALLOCATION.joinpath('Measuring Returns - Single NTNB Total Return.pdf'))
-plt.show()
+
+if show_chart:
+    plt.show()
+
 plt.close()
 
 
@@ -78,5 +82,8 @@ plt.tight_layout()
 
 plt.savefig(AA_LECTURE.joinpath('Figures/Measuring Returns - Single NTNB Returns and Vol.pdf'))
 plt.savefig(ASSET_ALLOCATION.joinpath('Measuring Returns - Single NTNB Returns and Vol.pdf'))
-plt.show()
+
+if show_chart:
+    plt.show()
+
 plt.close()

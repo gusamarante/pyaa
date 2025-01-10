@@ -3,7 +3,7 @@ from tqdm import tqdm
 import pandas as pd
 
 
-last_year = 2024  # Year of the last file available
+last_year = 2025  # Year of the last file available
 
 # ======================
 # ===== DI Futures =====

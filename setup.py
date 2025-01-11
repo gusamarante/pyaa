@@ -26,6 +26,8 @@ setup(
         'scipy',
         'numpy',
         'matplotlib',
+        'pomegranate',
+        'torch',
     ],
     keywords=[
         'finance',

@@ -9,7 +9,7 @@ last_year = 2024
 notional_start = 100
 start_date = '2006-01-01'
 size = 5
-show_chart = False
+show_chart = True
 
 # Read the Data
 ntnb = raw_ntnb()

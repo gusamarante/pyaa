@@ -90,8 +90,8 @@ for dd in desired_duration:
             sellvalue = sellvalue + df_bt.loc[datem1, 'quantity 2'] * (aux_data.loc[current_bond2, 'price'] - aux_data.loc[current_bond2, 'bidask spread'] / 2)
             sellvalue = sellvalue + df_bt.loc[datem1, 'quantity 1'] * aux_data.loc[current_bond1, 'coupon'] + df_bt.loc[datem1, 'quantity 2'] * aux_data.loc[current_bond2, 'coupon']
 
-            df_bt.loc[date, 'quantity 1'] = x * sellvalue / (aux_data.loc[new_bond1, 'price'] + aux_data.loc[current_bond1, 'bidask spread'] / 2)
-            df_bt.loc[date, 'quantity 2'] = (1 - x) * sellvalue / (aux_data.loc[new_bond2, 'price'] - aux_data.loc[current_bond2, 'bidask spread'] / 2)
+            df_bt.loc[date, 'quantity 1'] = x * sellvalue / (aux_data.loc[new_bond1, 'price'] + aux_data.loc[new_bond1, 'bidask spread'] / 2)
+            df_bt.loc[date, 'quantity 2'] = (1 - x) * sellvalue / (aux_data.loc[new_bond2, 'price'] - aux_data.loc[new_bond2, 'bidask spread'] / 2)
 
             df_bt.loc[date, 'price 1'] = aux_data.loc[new_bond1, 'price']
             df_bt.loc[date, 'price 2'] = aux_data.loc[new_bond2, 'price']

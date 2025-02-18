@@ -3,6 +3,7 @@ from pathlib import Path
 
 # Lectures
 AA_LECTURE = Path(f"/Users/{getuser()}/Dropbox/Aulas/Insper - Asset Allocation")
+RF_LECTURE = Path(f"/Users/{getuser()}/Dropbox/Aulas/Insper - Renda Fixa/2025")  # Change the year when needed
 
 # Book Chapters
 ASSET_ALLOCATION = Path(f"/Users/{getuser()}/Dropbox/Livros/Asset Allocation/figures")

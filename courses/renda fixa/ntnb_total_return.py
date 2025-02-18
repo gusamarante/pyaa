@@ -8,7 +8,7 @@ from matplotlib.ticker import ScalarFormatter
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from data import trackers_ntnb
-from utils import AA_LECTURE, ASSET_ALLOCATION, BLUE, GREEN, RED, YELLOW
+from utils import AA_LECTURE, RF_LECTURE, ASSET_ALLOCATION, BLUE, GREEN, RED, YELLOW
 
 size = 5
 
@@ -38,6 +38,7 @@ ax.legend(frameon=True, loc="best")
 plt.tight_layout()
 
 plt.savefig(AA_LECTURE.joinpath("Figures/Measuring Returns - NTNB Total Return.pdf"))
+plt.savefig(RF_LECTURE.joinpath("figures/Measuring Returns - NTNB Total Return.pdf"))
 plt.savefig(ASSET_ALLOCATION.joinpath("Measuring Returns - NTNBs Total Returns.pdf"))
 plt.show()
 plt.close()

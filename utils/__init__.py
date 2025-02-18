@@ -6,6 +6,8 @@ from .charts import (
 )
 from .paths import (
     AA_LECTURE,
+    RF_LECTURE,
+
     ASSET_ALLOCATION,
     EMPIRICAL_FINANCE,
     STATISTICS_BAYESIAN,
@@ -17,6 +19,7 @@ from .stats import cov2corr, corr2cov
 __all__ = [
     # Lectures
     "AA_LECTURE",
+    "RF_LECTURE",
 
     # Book
     "ASSET_ALLOCATION",

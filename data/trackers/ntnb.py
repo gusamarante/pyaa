@@ -28,17 +28,27 @@ for dd in desired_duration:
     # First date
     aux_data = ntnb[ntnb['reference date'] == dates2loop[0]].set_index('bond code')
     aux_data = aux_data.sort_values('du')
+    aux_data = aux_data[aux_data['volume'] > 0]
+    aux_data = aux_data[aux_data['du'] >= 21 * rebalance_window]
 
     dur_idx = aux_data['duration'].searchsorted(dd)
-    a = aux_data['duration'].iloc[[dur_idx - 1, dur_idx]].values
-    x = (dd - a[1]) / (a[0] - a[1])  # Ammount of bond 1
-    current_bond1, current_bond2 = aux_data['duration'].iloc[[dur_idx - 1, dur_idx]].index
+    if dur_idx == 0:
+        x = 1
+        current_bond1, current_bond2 = aux_data['duration'].iloc[[0, 1]].index
+
+    elif dur_idx == len(aux_data['duration']):
+        x = 0
+        current_bond1, current_bond2 = aux_data['duration'].iloc[[-2, -1]].index
+
+    else:
+        a = aux_data['duration'].iloc[[dur_idx - 1, dur_idx]].values
+        x = (dd - a[1]) / (a[0] - a[1])  # Ammount of bond 1
+        current_bond1, current_bond2 = aux_data['duration'].iloc[[dur_idx - 1, dur_idx]].index
+
     df_bt.loc[dates2loop[0], 'bond 1'] = current_bond1
     df_bt.loc[dates2loop[0], 'bond 2'] = current_bond2
-    df_bt.loc[dates2loop[0], 'du 1'] = aux_data.loc[current_bond1, 'du']
-    df_bt.loc[dates2loop[0], 'du 2'] = aux_data.loc[current_bond2, 'du']
-    df_bt.loc[dates2loop[0], 'quantity 1'] = x * notional_start / (aux_data.loc[current_bond1, 'price'] + aux_data.loc[current_bond1, 'bidask spread'] / 2)
-    df_bt.loc[dates2loop[0], 'quantity 2'] = (1 - x) * notional_start / (aux_data.loc[current_bond2, 'price'] + aux_data.loc[current_bond2, 'bidask spread'] / 2)
+    df_bt.loc[dates2loop[0], 'quantity 1'] = x * notional_start / aux_data.loc[current_bond1, 'price']
+    df_bt.loc[dates2loop[0], 'quantity 2'] = (1 - x) * notional_start / aux_data.loc[current_bond2, 'price']
     df_bt.loc[dates2loop[0], 'price 1'] = aux_data.loc[current_bond1, 'price']
     df_bt.loc[dates2loop[0], 'price 2'] = aux_data.loc[current_bond2, 'price']
     df_bt.loc[dates2loop[0], 'Notional'] = df_bt.loc[dates2loop[0], 'quantity 1'] * df_bt.loc[dates2loop[0], 'price 1'] \
@@ -56,16 +66,14 @@ for dd in desired_duration:
         if date < next_rebalance_date:  # still behind the rebalance, MtM
             df_bt.loc[date, 'bond 1'] = current_bond1
             df_bt.loc[date, 'bond 2'] = current_bond2
-            df_bt.loc[date, 'du 1'] = aux_data.loc[current_bond1, 'du']
-            df_bt.loc[date, 'du 2'] = aux_data.loc[current_bond2, 'du']
-            df_bt.loc[date, 'quantity 1'] = df_bt.loc[datem1, 'quantity 1'] * (1 + aux_data.loc[current_bond1, 'coupon'] / (aux_data.loc[current_bond1, 'price'] + aux_data.loc[current_bond1, 'bidask spread'] / 2))
-            df_bt.loc[date, 'quantity 2'] = df_bt.loc[datem1, 'quantity 2'] * (1 + aux_data.loc[current_bond2, 'coupon'] / (aux_data.loc[current_bond2, 'price'] + aux_data.loc[current_bond2, 'bidask spread'] / 2))
+            df_bt.loc[date, 'quantity 1'] = df_bt.loc[datem1, 'quantity 1'] * (1 + aux_data.loc[current_bond1, 'coupon'] / aux_data.loc[current_bond1, 'price'])
+            df_bt.loc[date, 'quantity 2'] = df_bt.loc[datem1, 'quantity 2'] * (1 + aux_data.loc[current_bond2, 'coupon'] / aux_data.loc[current_bond2, 'price'])
             df_bt.loc[date, 'price 1'] = aux_data.loc[current_bond1, 'price']
             df_bt.loc[date, 'price 2'] = aux_data.loc[current_bond2, 'price']
             df_bt.loc[date, 'Notional'] = df_bt.loc[date, 'quantity 1'] * df_bt.loc[date, 'price 1'] + df_bt.loc[date, 'quantity 2'] * df_bt.loc[date, 'price 2']
 
         else:  # past rebalance, recompute the weights
-            aux_data_select = aux_data[aux_data['du'] >= 21*rebalance_window]
+            aux_data_select = aux_data[aux_data['du'] >= 21 * rebalance_window]
             dur_idx = aux_data_select['duration'].searchsorted(dd)
 
             if dur_idx == 0:
@@ -83,15 +91,13 @@ for dd in desired_duration:
 
             df_bt.loc[date, 'bond 1'] = new_bond1
             df_bt.loc[date, 'bond 2'] = new_bond2
-            df_bt.loc[date, 'du 1'] = aux_data.loc[new_bond1, 'du']
-            df_bt.loc[date, 'du 2'] = aux_data.loc[new_bond2, 'du']
 
-            sellvalue = df_bt.loc[datem1, 'quantity 1'] * (aux_data.loc[current_bond1, 'price'] - aux_data.loc[current_bond1, 'bidask spread'] / 2)
-            sellvalue = sellvalue + df_bt.loc[datem1, 'quantity 2'] * (aux_data.loc[current_bond2, 'price'] - aux_data.loc[current_bond2, 'bidask spread'] / 2)
+            sellvalue = df_bt.loc[datem1, 'quantity 1'] * aux_data.loc[current_bond1, 'price']
+            sellvalue = sellvalue + df_bt.loc[datem1, 'quantity 2'] * aux_data.loc[current_bond2, 'price']
             sellvalue = sellvalue + df_bt.loc[datem1, 'quantity 1'] * aux_data.loc[current_bond1, 'coupon'] + df_bt.loc[datem1, 'quantity 2'] * aux_data.loc[current_bond2, 'coupon']
 
-            df_bt.loc[date, 'quantity 1'] = x * sellvalue / (aux_data.loc[new_bond1, 'price'] + aux_data.loc[new_bond1, 'bidask spread'] / 2)
-            df_bt.loc[date, 'quantity 2'] = (1 - x) * sellvalue / (aux_data.loc[new_bond2, 'price'] - aux_data.loc[new_bond2, 'bidask spread'] / 2)
+            df_bt.loc[date, 'quantity 1'] = x * sellvalue / aux_data.loc[new_bond1, 'price']
+            df_bt.loc[date, 'quantity 2'] = (1 - x) * sellvalue / aux_data.loc[new_bond2, 'price']
 
             df_bt.loc[date, 'price 1'] = aux_data.loc[new_bond1, 'price']
             df_bt.loc[date, 'price 2'] = aux_data.loc[new_bond2, 'price']

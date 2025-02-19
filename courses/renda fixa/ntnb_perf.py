@@ -32,7 +32,6 @@ fig = plt.figure(figsize=(size * (16 / 7.3), size))
 # Excess Returns VS Volatility
 ax = plt.subplot2grid((1, 2), (0, 0))
 ax.scatter(perf.table.loc["Vol"], perf.table.loc["Return"], color=BLUE)
-ax.axhline(0, color='black', lw=0.5)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.set_title("NTN-Bs")

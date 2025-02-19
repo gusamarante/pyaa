@@ -2,6 +2,8 @@ from utils import Performance
 from data import trackers_ntnb, SGS
 import matplotlib.pyplot as plt
 from utils import BLUE, RF_LECTURE
+from plottable import ColDef, Table
+from plottable.plots import bar
 
 size = 5
 
@@ -70,4 +72,37 @@ plt.close()
 # =============================
 # ===== Performance Table =====
 # =============================
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
+ax = plt.subplot2grid((1, 1), (0, 0))
+
+df2plot = perf.table.copy().T
+df2plot = df2plot.drop(["Start Date", "Sortino"], axis=1)
+df2plot = df2plot.astype(float)
+df2plot.index.name = "Duration"
+
+
+tab = Table(
+    df2plot,
+    ax=ax,
+    footer_divider=True,
+    textprops={"fontsize": 12},
+    column_definitions=[
+        ColDef(name="Duration", textprops={"ha": "left", "weight": "bold"}),
+        ColDef(name="Return", textprops={"ha": "center"}, formatter="{:.2%}"),
+        ColDef(name="Vol", textprops={"ha": "center"}, formatter="{:.2%}"),
+        ColDef(name="Sharpe", textprops={"ha": "center"}, formatter="{:.2f}"),
+        ColDef(name="Skew", textprops={"ha": "center"}, formatter="{:.2f}"),
+        ColDef(name="Kurt", textprops={"ha": "center"}, formatter="{:.2f}"),
+        ColDef(name="Max DD", textprops={"ha": "center"}, formatter="{:.2%}"),
+    ],
+)
+
+for col in range(tab.col_label_row.get_xrange()[1]):
+    tab.col_label_row.cells[col].text.set_weight("bold")
+
+plt.tight_layout()
+
+plt.savefig(RF_LECTURE.joinpath("figures/NTNB - Performance Table.pdf"))
+plt.show()
+plt.close()

@@ -25,6 +25,7 @@ setup(
         'matplotlib',
         'numpy',
         'pandas',
+        'plottable',
         'scikit-learn',
         'scipy',
         'tqdm',

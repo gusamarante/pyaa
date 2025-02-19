@@ -22,8 +22,12 @@ setup(
     long_description=long_description,
     packages=find_packages(),
     install_requires=[
-        'pandas',
         'matplotlib',
+        'numpy',
+        'pandas',
+        'scikit-learn',
+        'scipy',
+        'tqdm',
     ],
     keywords=[
         'finance',

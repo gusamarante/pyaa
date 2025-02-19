@@ -13,9 +13,15 @@ class Performance(object):
 
     def __init__(self, total_return, rolling_window=252, skip_dd=False):
         """
-        Computes performance measures for each columns in 'total_return'
-        :param total_return: pandas DataFrame with total return inndexes.
-        :param rolling_window: int. number of business day for the rolling measures
+        Computes performance measures for each column of 'total_return'
+
+        Parameters
+        ----------
+        total_return: pandas.DataFrame
+            Total return inndexes
+
+        rolling_window: int
+            number of business day for the rolling measures
         """
 
         assert isinstance(total_return, pd.DataFrame), \
@@ -165,7 +171,7 @@ class Performance(object):
             data['expanding max'] = data['tracker'].expanding().max()
             data['dd'] = data['tracker'] / data['expanding max'] - 1
             data['iszero'] = data['dd'] == 0
-            data['current min'] = 0
+            data['current min'] = 0.0
             data['last start'] = data.index[0]
             data['end'] = data.index[0]
 

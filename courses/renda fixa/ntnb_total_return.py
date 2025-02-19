@@ -38,7 +38,7 @@ ax.legend(frameon=True, loc="best")
 plt.tight_layout()
 
 plt.savefig(AA_LECTURE.joinpath("Figures/Measuring Returns - NTNB Total Return.pdf"))
-plt.savefig(RF_LECTURE.joinpath("figures/Measuring Returns - NTNB Total Return.pdf"))
+plt.savefig(RF_LECTURE.joinpath("figures/NTNB - Total Return.pdf"))
 plt.savefig(ASSET_ALLOCATION.joinpath("Measuring Returns - NTNBs Total Returns.pdf"))
 plt.show()
 plt.close()

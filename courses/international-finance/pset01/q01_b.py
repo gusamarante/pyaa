@@ -1,5 +1,5 @@
 """
-Compares different detrending methodologies
+Compares different detrending methodologies using World Bank Yearly data
 """
 import pandas as pd
 import numpy as np
@@ -18,6 +18,7 @@ size = 5
 data_wb = pd.read_excel(
     '/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/PS1 Data Clean.xlsx',
     index_col=0,
+    sheet_name="World Bank",
 )
 data_wb.index = pd.to_datetime(data_wb.index)
 data_wb = data_wb.resample("Y").last()

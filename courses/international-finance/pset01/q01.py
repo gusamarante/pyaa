@@ -103,7 +103,7 @@ for country in ['US', 'KR']:
     growth = pd.concat([np.log(data_wb[f"{country} GDP"]), all_trends], axis=1).diff(1)
 
 
-    # --- Chart ---
+    # --- Trend Charts ---
     fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
     # Level of Trends
@@ -125,6 +125,24 @@ for country in ['US', 'KR']:
     ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
     ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
     ax.legend(frameon=True, loc="lower left")
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.tick_params(rotation=90, axis="x")
+
+    plt.tight_layout()
+    plt.show()
+
+
+    # --- Cycle Charts ---
+    fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+    # All Cycles
+    ax = plt.subplot2grid((1, 1), (0, 0))
+    ax.set_title(f"Cycles Estimates for {country}")
+    ax.plot(all_cycles, label=all_cycles.columns)
+    ax.axhline(0, color="black", lw=0.5)
+    ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+    ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+    ax.legend(frameon=True, loc="upper left")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.tick_params(rotation=90, axis="x")
 

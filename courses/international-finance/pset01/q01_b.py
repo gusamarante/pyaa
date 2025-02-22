@@ -1,9 +1,13 @@
+"""
+Compares different detrending methodologies
+"""
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.filters.hp_filter import hpfilter
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from models import fihp
 
 # User Parameters
 size = 5
@@ -12,7 +16,7 @@ size = 5
 # ===== READ DATA =====
 # World Bank
 data_wb = pd.read_excel(
-    '/Users/gustavoamarante/Library/CloudStorage/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/PS1 Data Clean.xlsx',
+    '/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/PS1 Data Clean.xlsx',
     index_col=0,
 )
 data_wb.index = pd.to_datetime(data_wb.index)
@@ -75,7 +79,17 @@ def hp(series, lamb):
     return trend, cycle
 
 
-# TODO Forecast HP Filter
+def fcast_incr_hp(series, lamb):
+    series = np.log(series)
+    trend, cycle = fihp(
+        series=series,
+        lamb=lamb,
+        forecast_steps=20,
+        min_obs=10,
+        arima_order=(1, 1, 1),
+    )
+    return trend, cycle
+
 
 
 # ===== RUN ALL METHODOLOGIES =====
@@ -99,6 +113,14 @@ for country in ['US', 'KR']:
     t, c = hp(data_wb[f"{country} GDP"], 100)
     all_trends = pd.concat([all_trends, t.rename('HP 100')], axis=1)
     all_cycles = pd.concat([all_cycles, c.rename('HP 100')], axis=1)
+
+    t, c = fcast_incr_hp(data_wb[f"{country} GDP"], 6.25)
+    all_trends = pd.concat([all_trends, t.rename('FIHP 6.25')], axis=1)
+    all_cycles = pd.concat([all_cycles, c.rename('FIHP 6.25')], axis=1)
+
+    t, c = fcast_incr_hp(data_wb[f"{country} GDP"], 100)
+    all_trends = pd.concat([all_trends, t.rename('FIHP 100')], axis=1)
+    all_cycles = pd.concat([all_cycles, c.rename('FIHP 100')], axis=1)
 
     growth = pd.concat([np.log(data_wb[f"{country} GDP"]), all_trends], axis=1).diff(1)
 

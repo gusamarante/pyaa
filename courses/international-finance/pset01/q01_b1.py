@@ -8,15 +8,20 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from models import fihp
+import getpass
+from pathlib import Path
 
 # User Parameters
 size = 5
 
+username = getpass.getuser()
+save_path = Path(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/figures')
 
 # ===== READ DATA =====
 # World Bank
+
 data_wb = pd.read_excel(
-    '/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/PS1 Data Clean.xlsx',
+    f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/PS1 Data Clean.xlsx',
     index_col=0,
     sheet_name="World Bank",
 )
@@ -152,7 +157,9 @@ for country in ['US', 'KR']:
     ax.tick_params(rotation=90, axis="x")
 
     plt.tight_layout()
+    plt.savefig(save_path.joinpath(f'Q01 b {country} Trends.pdf'))
     plt.show()
+    plt.close()
 
 
     # --- Cycle Charts ---
@@ -170,4 +177,6 @@ for country in ['US', 'KR']:
     ax.tick_params(rotation=90, axis="x")
 
     plt.tight_layout()
+    plt.savefig(save_path.joinpath(f'Q01 b {country} Cycles.pdf'))
     plt.show()
+    plt.close()

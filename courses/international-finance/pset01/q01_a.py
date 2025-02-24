@@ -15,7 +15,6 @@ from models import fihp
 
 # User Parameters
 size = 5
-show_charts = False
 
 username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/figures')
@@ -168,9 +167,5 @@ for method in results['US'].keys():
 
     plt.tight_layout()
     plt.savefig(save_path.joinpath(f'Q01 a Quarterly GDP {method}.pdf'))
-
-    if show_charts:
-        plt.show()
-
+    plt.show()
     plt.close()
-

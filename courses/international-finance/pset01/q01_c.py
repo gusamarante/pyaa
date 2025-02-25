@@ -28,7 +28,7 @@ data_wb = pd.read_excel(
     sheet_name="Quarterly GDP",
 )
 data_wb.index = pd.to_datetime(data_wb.index)
-data_wb = data_wb.resample("Q").last()
+data_wb = data_wb.resample("QE").last()
 gdp_us = data_wb['US GDP'].dropna()
 gdp_kr = data_wb['KR GDP'].dropna()
 
@@ -39,7 +39,7 @@ data_rec = pd.read_excel(
     sheet_name="Recession",
 )
 data_rec.index = pd.to_datetime(data_rec.index)
-data_rec = data_rec.fillna(0).resample("Q").mean().fillna(0)
+data_rec = data_rec.fillna(0).resample("QE").mean().fillna(0)
 data_rec = data_rec.where(data_rec == 0, 1)
 
 
@@ -126,5 +126,14 @@ results = {
     },
 }
 
-# TODO results["US"]["linear"]['cycle'].shift(2).corr(data_rec["US"])
+
+# In Sample Exercise
+mindex = pd.MultiIndex.from_tuples([], names=["Country", "Method"])
+df_corr = pd.DataFrame(index=mindex)
+for country in results.keys():
+    for method in results[country].keys():
+        for lag in range(8):
+            df_corr.loc[(country, method), lag] = results[country][method]['cycle'].shift(lag).corr(data_rec[country])
+
+# TODO 2x2 chart with each methodology, Countries on the bars, lags on x, corr on y
 

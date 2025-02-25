@@ -7,7 +7,7 @@ from data import SGS
 import matplotlib.dates as mdates
 from utils import BLUE, RED
 
-start_val_lambda = 129600
+start_val_lambda = 14400
 
 # Get data
 df = SGS().fetch(series_id={24364: "IBC-Br"})
@@ -68,7 +68,7 @@ sy = Slider(
     ax=ax_lamb,
     label="$\lambda$",
     valmin=0,
-    valmax=start_val_lambda * 2,
+    valmax=int(start_val_lambda * 1.2),
     valinit=start_val_lambda,
     valstep=10,
 )

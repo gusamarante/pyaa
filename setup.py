@@ -28,6 +28,7 @@ setup(
         'plottable',
         'scikit-learn',
         'scipy',
+        'seaborn',
         'statsmodels',
         'tqdm',
     ],

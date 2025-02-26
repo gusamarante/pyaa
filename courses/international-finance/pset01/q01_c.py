@@ -8,6 +8,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.tsa.filters.hp_filter import hpfilter
 
@@ -15,6 +16,7 @@ from models import fihp
 
 # User Parameters
 size = 5
+y_lim = 0.5
 
 username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Problem Set 01/figures')
@@ -113,16 +115,16 @@ def fcast_incr_hp(series, lamb):
 
 results = {
     "US": {
-        "linear": log_linear(gdp_us),
-        "quadratic": log_quadratic(gdp_us),
-        "hp 1600": hp(gdp_us, 1600),
-        "fihp 1600": fcast_incr_hp(gdp_us, 1600),
+        "Linear": log_linear(gdp_us),
+        "Quadratic": log_quadratic(gdp_us),
+        "HP 1600": hp(gdp_us, 1600),
+        "FIHP 1600": fcast_incr_hp(gdp_us, 1600),
     },
     "KR": {
-        "linear": log_linear(gdp_kr),
-        "quadratic": log_quadratic(gdp_kr),
-        "hp 1600": hp(gdp_kr, 1600),
-        "fihp 1600": fcast_incr_hp(gdp_kr, 1600),
+        "Linear": log_linear(gdp_kr),
+        "Quadratic": log_quadratic(gdp_kr),
+        "HP 1600": hp(gdp_kr, 1600),
+        "FIHP 1600": fcast_incr_hp(gdp_kr, 1600),
     },
 }
 
@@ -135,5 +137,65 @@ for country in results.keys():
         for lag in range(8):
             df_corr.loc[(country, method), lag] = results[country][method]['cycle'].shift(lag).corr(data_rec[country])
 
-# TODO 2x2 chart with each methodology, Countries on the bars, lags on x, corr on y
+
+
+# ===== CHART =====
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((2, 2), (0, 0))
+method = "Linear"
+data2plot = df_corr.xs(method, level=1)
+ax.plot(data2plot.loc["US"], label="US")
+ax.plot(data2plot.loc["KR"], label="KR")
+ax.axhline(0, color="black", lw=0.5)
+ax.set_title(method)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+ax.set_ylabel("Correlation")
+ax.set_ylim(-y_lim, y_lim)
+
+ax = plt.subplot2grid((2, 2), (0, 1))
+method = "Quadratic"
+data2plot = df_corr.xs(method, level=1)
+ax.plot(data2plot.loc["US"], label="US")
+ax.plot(data2plot.loc["KR"], label="KR")
+ax.axhline(0, color="black", lw=0.5)
+ax.set_title(method)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+ax.set_ylim(-y_lim, y_lim)
+
+ax = plt.subplot2grid((2, 2), (1, 0))
+method = "HP 1600"
+data2plot = df_corr.xs(method, level=1)
+ax.plot(data2plot.loc["US"], label="US")
+ax.plot(data2plot.loc["KR"], label="KR")
+ax.axhline(0, color="black", lw=0.5)
+ax.set_title(method)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+ax.set_ylabel("Correlation")
+ax.set_ylim(-y_lim, y_lim)
+ax.set_xlabel("Lag in Cycle Estimate (Quarters)")
+
+ax = plt.subplot2grid((2, 2), (1, 1))
+method = "FIHP 1600"
+data2plot = df_corr.xs(method, level=1)
+ax.plot(data2plot.loc["US"], label="US")
+ax.plot(data2plot.loc["KR"], label="KR")
+ax.axhline(0, color="black", lw=0.5)
+ax.set_title(method)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+ax.set_ylim(-y_lim, y_lim)
+ax.set_xlabel("Lag in Cycle Estimate (Quarters)")
+
+plt.tight_layout()
+plt.savefig(save_path.joinpath(f'Q01 c Correlation with recessions.pdf'))
+plt.show()
+plt.close()
 

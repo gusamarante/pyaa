@@ -7,7 +7,7 @@ from tqdm import tqdm
 import pandas as pd
 
 # User defined parameters
-desired_duration = [i for i in range(1, 11)]  # in years
+desired_duration = [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # in years
 rebalance_window = 2  # in months
 start_date = '2008-01-01'  # when the 10y gets enough liquidity
 

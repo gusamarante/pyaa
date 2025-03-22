@@ -5,7 +5,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.pylab import Slider
 
-start_rate = 0.01
+start_rate = 0.14
 grid_size = 100
 rate_eps = 0.0001
 MAT = pd.to_datetime("2035-01-01")
@@ -63,9 +63,6 @@ def dv_dur_conv(
     return dv, dur, conv
 
 
-print(pu(start_rate))
-
-
 # =================
 # ===== Chart =====
 # =================
@@ -75,7 +72,7 @@ fig = plt.figure(figsize=(size * (16 / 7.3), size))
 max_rate = start_rate + 0.1
 rate2plot = np.arange(0, max_rate, max_rate / grid_size)
 
-ax = plt.subplot2grid((1, 2), (0, 0))
+ax = plt.subplot2grid((1, 1), (0, 0))
 dot_rate = start_rate
 dot_price = pu(dot_rate)
 dot_dv01, dot_dur, dot_conv = dv_dur_conv(dot_rate)

@@ -19,10 +19,12 @@ username = getpass.getuser()
 save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024/figures')
 
 # get data
-rate = pd.read_excel(f'/Users/{username}/PycharmProjects/pyaa/trackers/output data/di fixed maturities.xlsx',
-                     sheet_name='Rate',
-                     index_col=0)
-pu = 100_000 / ((1+rate)**(rate.columns / 252))
+rate = pd.read_csv(f'/Users/{username}/PycharmProjects/pyaa/data/data_output/di monthly maturities.csv',
+                   index_col=0)
+rate.index = pd.to_datetime(rate.index)
+rate.columns = rate.columns.str[:-1].astype(int)
+rate = rate.dropna(how='all', axis=0).dropna(how='any', axis=1)
+pu = 100_000 / ((1+rate)**(rate.columns / 12))
 dv01 = (((- rate.columns / 252) * pu) / (1 + rate)) / 10_000
 
 
@@ -66,7 +68,7 @@ pcs = X @ loadings
 # ===== Charts =====
 # ==================
 # Curve dynamics
-df_plot = rate[[252 * a for a in range(1, 10)]] * 100
+df_plot = rate[[12 * a for a in range(1, 10)]] * 100
 df_plot.columns =  [f"{a}y" for a in range(1, 10)]
 
 plt.figure(figsize=(7, 7 * (9 / 16)))

@@ -11,7 +11,7 @@ pd.set_option('display.width', 250)
 
 # Path to save outputs
 username = getpass.getuser()
-save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2024')
+save_path = Path(f'/Users/{username}/Dropbox/Aulas/Insper - Renda Fixa/2025')
 
 # get data
 df_raw = pd.DataFrame()

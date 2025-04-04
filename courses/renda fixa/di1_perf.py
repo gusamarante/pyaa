@@ -3,7 +3,6 @@ from data import trackers_di
 import matplotlib.pyplot as plt
 from utils import BLUE, RF_LECTURE
 from plottable import ColDef, Table
-from plottable.plots import bar
 
 size = 5
 

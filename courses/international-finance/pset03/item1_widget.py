@@ -1,6 +1,5 @@
 # TODO documentation
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.pylab import Slider
 
@@ -8,7 +7,7 @@ start_beta = 0.9  # impatience factor
 start_pi = 0.1  # Prob of state a
 start_alpha = 0.7  # Marginal utility shock in state a
 start_kappa = 0.3  # Moral cost of defaulting
-start_q = start_beta
+start_q = 0.6
 
 n_steps = 100
 size = 5

@@ -145,10 +145,17 @@ def update(val):
     c_dot_vf.set_xdata([nq])
     c_dot_vf.set_ydata([value_fun(nq, nalpha, nkappa, nbeta, npi)])
 
+    ax_lu.relim()
+    ax_lu.autoscale_view()
+    ax_vf.relim()
+    ax_vf.autoscale_view()
+    fig.canvas.draw_idle()
+
 sbeta.on_changed(update)
 spi.on_changed(update)
 salpha.on_changed(update)
 skappa.on_changed(update)
 sq.on_changed(update)
+
 plt.tight_layout()
 plt.show()

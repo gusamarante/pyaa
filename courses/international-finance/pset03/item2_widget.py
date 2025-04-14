@@ -88,6 +88,9 @@ def update(val):
     nalpha = salpha.val
     nkappa = skappa.val
 
+    cond = nbeta * (npi / nalpha + 1 - npi) < 1 - npi
+    print(cond)
+
     c_lu.set_ydata([
         utility(d, nalpha, nkappa, nbeta, npi)
         for d in d_range

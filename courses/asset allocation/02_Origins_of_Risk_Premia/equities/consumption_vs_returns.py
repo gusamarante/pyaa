@@ -7,23 +7,18 @@ FFBA08 - Yellow
 F25F5C - Red
 """
 
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
-from matplotlib.ticker import ScalarFormatter
 import statsmodels.api as sm
 import numpy as np
-
-from bwbbgdl import GoGet
 from bwmktdata import Macrobond
-from bwsecrets.api import get_secret
 
-from utils import Performance
+from utils import AA_LECTURE
 
 size = 5
 
 # ===== Read the Data =====
-file_path = r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"
+file_path = AA_LECTURE.joinpath("Dados BBG AA Course.xlsx")
 df = pd.read_excel(file_path, sheet_name='TOT_RETURN_INDEX_GROSS_DVDS', skiprows=4, index_col=0)
 df = df.sort_index()
 df = df.dropna(how='all')
@@ -37,8 +32,7 @@ rename_tickers = {
 df = df.rename(rename_tickers, axis=1)
 
 # Macrobond
-passwords = get_secret("macrobond")
-mb = Macrobond(client_id=passwords["client_id"], client_secret=passwords["client_secret"])
+mb = Macrobond()
 mb_tickers = {
     "usrate0190": "FFER",
     "eurate0003": "ECB Deposit Effective Rate",
@@ -49,8 +43,7 @@ mb_tickers = {
     "jpnaac0004": "Japan Consumption",
     "brnaac0016": "Brazil Consumption",
 }
-
-df_mb = mb.fetch_series(mb_tickers)
+df_mb = mb.get_series(mb_tickers)
 
 # ===== US =====
 ffr = df_mb['FFER'].dropna().copy()
@@ -278,6 +271,6 @@ ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
 
-plt.savefig(r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Figures/Equities - ERI vs Consumption.pdf")
+plt.savefig(AA_LECTURE.joinpath("Figures/Equities - ERI vs Consumption.pdf"))
 plt.show()
 plt.close()

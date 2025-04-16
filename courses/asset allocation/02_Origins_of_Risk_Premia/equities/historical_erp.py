@@ -13,14 +13,13 @@ import pandas as pd
 from matplotlib.ticker import ScalarFormatter
 
 from bwmktdata import Macrobond
-from bwsecrets.api import get_secret
 
-from utils import Performance
+from utils import Performance, AA_LECTURE
 
 size = 5
 
 # ===== Read the Data =====
-file_path = r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Dados BBG AA Course.xlsx"
+file_path = AA_LECTURE.joinpath("Dados BBG AA Course.xlsx")
 df = pd.read_excel(file_path, sheet_name='TOT_RETURN_INDEX_GROSS_DVDS', skiprows=4, index_col=0)
 df = df.sort_index()
 df = df.dropna(how='all')
@@ -34,8 +33,7 @@ rename_tickers = {
 df = df.rename(rename_tickers, axis=1)
 
 # Macrobond
-passwords = get_secret("macrobond")
-mb = Macrobond(client_id=passwords["client_id"], client_secret=passwords["client_secret"])
+mb = Macrobond()
 mb_tickers = {
     "usrate0190": "FFER",
     "eurate0003": "ECB Deposit Effective Rate",
@@ -43,7 +41,7 @@ mb_tickers = {
     "brrate0003": "CDI",
 }
 
-df_mb = mb.fetch_series(mb_tickers)
+df_mb = mb.get_series(mb_tickers)
 
 # ===== US =====
 ffr = df_mb['FFER'].dropna().copy()
@@ -170,7 +168,7 @@ ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
 
-plt.savefig(r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Figures/Equities - Historical ERP - US EU.pdf")
+plt.savefig(AA_LECTURE.joinpath("Figures/Equities - Historical ERP - US EU.pdf"))
 plt.show()
 plt.close()
 
@@ -214,7 +212,7 @@ ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
 
-plt.savefig(r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Figures/Equities - Historical ERP - JP BR.pdf")
+plt.savefig(AA_LECTURE.joinpath("Figures/Equities - Historical ERP - JP BR.pdf"))
 plt.show()
 plt.close()
 
@@ -244,6 +242,6 @@ ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
 
-plt.savefig(r"C:/Users/gamarante/Dropbox/Aulas/Insper - Asset Allocation/Figures/Equities - Historical ERP - All ERI.pdf")
+plt.savefig(AA_LECTURE.joinpath("Figures/Equities - Historical ERP - All ERI.pdf"))
 plt.show()
 plt.close()

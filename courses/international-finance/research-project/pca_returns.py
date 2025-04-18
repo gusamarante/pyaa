@@ -4,11 +4,24 @@ import matplotlib.dates as mdates
 from utils.performance import Performance
 from allocation import HRP
 from sklearn.decomposition import PCA
+import numpy as np
+from utils import BLUE
 
 df = pd.read_excel('/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
                    sheet_name='CDS Trackers',
                    index_col=0)
 df.index = pd.to_datetime(df.index)
+
+df = df.drop(
+    [
+        "ARGENT",
+        "RUSSIA",
+        "UKRAIN",
+        "VENZ",
+    ],
+    axis=1,
+)
+
 df = df.resample("M").last()
 df = df.dropna()
 # TODO resize the timeseries
@@ -24,6 +37,24 @@ pcs = pd.DataFrame(data=pca.transform(df.values),
                    columns=['PC 1', 'PC 2', 'PC 3', 'PC 4', 'PC 5'],
                    index=df.index)
 
-# TODO Make a better chart / eliminate problems
-loadings['PC 1'].plot(kind='bar')
+
+# =================
+# ===== Chart =====
+# =================
+size = 5
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+plotpc2 = loadings['PC 2'].sort_values()
+plotpc1 = loadings['PC 1'].loc[plotpc2.index]
+ax = plt.subplot2grid((2, 1), (0, 0))
+ax.bar(plotpc1.index, plotpc1.values, color=BLUE)
+ax.tick_params(rotation=90, axis="x")
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+ax = plt.subplot2grid((2, 1), (1, 0))
+ax.bar(plotpc2.index, plotpc2.values, color=BLUE)
+ax.tick_params(rotation=90, axis="x")
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+plt.tight_layout()
 plt.show()

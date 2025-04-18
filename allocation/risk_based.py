@@ -137,7 +137,7 @@ class HRP:
         ivp /= ivp.sum()
         return ivp
 
-    def plot_corr_matrix(self, save_path=None, show_chart=True, cmap='vlag', figsize=(7, 7)):
+    def plot_corr_matrix(self, save_path=None, show_chart=True, cmap='vlag', figsize=(7, 7), vmin=None, vmax=None):
         """
         Plots the correlation matrix
 
@@ -154,6 +154,12 @@ class HRP:
 
         figsize: tuple
             figsize dimensions
+
+        vmin: float
+            minimum value of the heatmap scale
+
+        vmax: float
+            maximum value of the heatmap scale
         """
 
         sns.clustermap(data=self.corr,
@@ -164,8 +170,8 @@ class HRP:
                        linewidths=0,
                        col_linkage=self.link,
                        row_linkage=self.link,
-                       vmin=-1,
-                       vmax=1)
+                       vmin=vmin,
+                       vmax=vmax)
 
         if not (save_path is None):
             plt.savefig(save_path)

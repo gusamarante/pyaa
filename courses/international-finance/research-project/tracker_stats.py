@@ -4,6 +4,7 @@ import matplotlib.dates as mdates
 from utils.performance import Performance
 
 df = pd.read_excel('/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
+                   sheet_name='CDS Trackers',
                    index_col=0)
 df.index = pd.to_datetime(df.index)
 # TODO resize the timeseries

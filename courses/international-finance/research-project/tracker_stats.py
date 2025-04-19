@@ -52,7 +52,11 @@ plt.show()
 # =======================
 # ===== Performance =====
 # =======================
-perf = Performance(df)
+perf = Performance(df, skip_dd=True)
 pt = perf.table.T
 pt = pt.sort_values("Sharpe")
+
+with pd.ExcelWriter('/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/Individual Performance.xlsx') as writer:
+    pt.to_excel(writer, 'performance')
+
 print(pt)

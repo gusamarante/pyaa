@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from utils.performance import Performance
 
+
 df = pd.read_excel('/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
                    sheet_name='CDS Trackers',
                    index_col=0)
@@ -45,7 +46,7 @@ ax.tick_params(rotation=90, axis="x")
 ax.legend(frameon=True, loc="best")
 
 plt.tight_layout()
-# plt.savefig(f'/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Problem Set 03/figures/item1 objevtive and value functions.pdf')
+plt.savefig(f'/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/trackers.pdf')
 plt.show()
 
 

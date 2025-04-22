@@ -1,15 +1,20 @@
+import getpass
 import numpy as np
 import pandas as pd
 from utils.performance import Performance
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from sklearn.decomposition import PCA
 
 
 n_portfolios = 5
-
+size = 5
 port_labels = [f"Port {i+1}" for i in range(n_portfolios)]
+username = getpass.getuser()
 
 
 trackers = pd.read_excel(
-    '/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
+    f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
     sheet_name='CDS Trackers',
     index_col=0,
 )
@@ -18,7 +23,7 @@ is_available = ~trackers.isna()
 rets = np.log(trackers).diff(1)
 
 spreads = pd.read_excel(
-    '/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
+    f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
     sheet_name='CDS Spread',
     index_col=0,
 )
@@ -39,23 +44,54 @@ portfolios = pd.DataFrame({"returns": rets.stack(), "portfolio": portfolios.stac
 portfolios = portfolios.groupby(['date', 'portfolio']).mean()
 portfolios = portfolios.unstack("portfolio")["returns"]
 
+portfolios[f"Port {n_portfolios - 1}-1"] = portfolios[f"Port {n_portfolios - 1}"] - portfolios[f"Port 1"]
+portfolios[f"Port {n_portfolios}-{n_portfolios - 1}"] = portfolios[f"Port {n_portfolios}"] - portfolios[f"Port {n_portfolios - 1}"]
+
 portfolios_trackers = (1 + portfolios).cumprod()
 portfolios_trackers = 100 * portfolios_trackers / portfolios_trackers.iloc[0]
 
-# TODO Add HML portfolio
-
+# Performance
 perf = Performance(portfolios_trackers, skip_dd=True)
 perf.table.to_clipboard()
 
-# TODO plot the portfolio trackers
+# PCA
+pca = PCA(n_components=n_portfolios)
+pca.fit(portfolios.iloc[:, :n_portfolios])
+
+var_ratio = pd.Series(data=pca.explained_variance_ratio_,
+                        index=[f'PC {i+1}' for i in range(n_portfolios)])
+loadings = pd.DataFrame(data=pca.components_.T,
+                        columns=[f'PC {i+1}' for i in range(n_portfolios)],
+                        index=portfolios.columns[:n_portfolios])
+
+print(var_ratio)
+print(loadings)
 
 
+# =================
+# ===== CHART =====
+# =================
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.plot(portfolios_trackers.iloc[:, :n_portfolios], label=portfolios_trackers.columns[:n_portfolios])
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+ax.set_title("Ranked Portfolios")
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
 
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.plot(portfolios_trackers.iloc[:, n_portfolios:], label=portfolios_trackers.columns[n_portfolios:])
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+ax.set_title("Long-Short Portfolios")
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
 
-
-
-
-
-
-a = 1
+plt.tight_layout()
+plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/trackers portfolios.pdf')
+plt.show()
+plt.close()

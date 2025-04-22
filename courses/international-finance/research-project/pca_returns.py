@@ -6,8 +6,12 @@ from allocation import HRP
 from sklearn.decomposition import PCA
 import numpy as np
 from utils import BLUE
+import getpass
 
-df = pd.read_excel('/Users/gamarante/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
+
+username = getpass.getuser()
+
+df = pd.read_excel(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
                    sheet_name='CDS Trackers',
                    index_col=0)
 df.index = pd.to_datetime(df.index)

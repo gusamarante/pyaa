@@ -28,7 +28,6 @@ df = df.drop(
 
 df = df.resample("M").last()
 df = df.dropna()
-# TODO resize the timeseries
 
 pca = PCA(n_components=5)
 pca.fit(df)

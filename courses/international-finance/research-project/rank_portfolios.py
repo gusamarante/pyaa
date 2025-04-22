@@ -5,6 +5,7 @@ from utils.performance import Performance
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from sklearn.decomposition import PCA
+from bayesfm import BFMGLS
 
 
 n_portfolios = 5
@@ -47,11 +48,11 @@ portfolios = portfolios.unstack("portfolio")["returns"]
 portfolios[f"Port {n_portfolios - 1}-1"] = portfolios[f"Port {n_portfolios - 1}"] - portfolios[f"Port 1"]
 portfolios[f"Port {n_portfolios}-{n_portfolios - 1}"] = portfolios[f"Port {n_portfolios}"] - portfolios[f"Port {n_portfolios - 1}"]
 
-portfolios_trackers = (1 + portfolios).cumprod()
-portfolios_trackers = 100 * portfolios_trackers / portfolios_trackers.iloc[0]
+port_trackers = (1 + portfolios).cumprod()
+port_trackers = 100 * port_trackers / port_trackers.iloc[0]
 
 # Performance
-perf = Performance(portfolios_trackers, skip_dd=True)
+perf = Performance(port_trackers, skip_dd=True)
 perf.table.to_clipboard()
 
 # PCA
@@ -74,7 +75,7 @@ print(loadings)
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
 ax = plt.subplot2grid((1, 2), (0, 0))
-ax.plot(portfolios_trackers.iloc[:, :n_portfolios], label=portfolios_trackers.columns[:n_portfolios])
+ax.plot(port_trackers.iloc[:, :n_portfolios], label=port_trackers.columns[:n_portfolios])
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.legend(frameon=True, loc="upper left")
@@ -83,7 +84,7 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 ax.tick_params(rotation=90, axis="x")
 
 ax = plt.subplot2grid((1, 2), (0, 1))
-ax.plot(portfolios_trackers.iloc[:, n_portfolios:], label=portfolios_trackers.columns[n_portfolios:])
+ax.plot(port_trackers.iloc[:, n_portfolios:], label=port_trackers.columns[n_portfolios:])
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.legend(frameon=True, loc="upper left")
@@ -95,3 +96,17 @@ plt.tight_layout()
 plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/trackers portfolios.pdf')
 plt.show()
 plt.close()
+
+
+# ========================
+# ===== Fama-MacBeth =====
+# ========================
+fm_ports = portfolios.iloc[:, n_portfolios:]
+fm_ports = fm_ports.reindex(rets.dropna().index)
+bfm = BFMGLS(
+    assets=rets.dropna(),
+    factors=fm_ports,
+    n_draws=10_000,
+)
+bfm.plot_lambda(include_fm=True)
+print(bfm.ci_table_lambda())

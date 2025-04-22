@@ -22,6 +22,7 @@ setup(
     long_description=long_description,
     packages=find_packages(),
     install_requires=[
+        'bayesfm',
         'matplotlib',
         'numpy',
         'pandas',

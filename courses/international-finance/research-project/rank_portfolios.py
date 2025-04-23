@@ -5,7 +5,8 @@ from utils.performance import Performance
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from sklearn.decomposition import PCA
-from bayesfm import BFMGLS
+from data import get_ff5f
+import statsmodels.api as sm
 
 
 n_portfolios = 5
@@ -57,7 +58,10 @@ perf.table.to_clipboard()
 
 # PCA
 pca = PCA(n_components=n_portfolios)
-pca.fit(portfolios.iloc[:, :n_portfolios])
+pca_ports = portfolios.iloc[:, :n_portfolios]
+pca_ports = (pca_ports - pca_ports.mean()) / pca_ports.std()
+
+pca.fit(pca_ports)
 
 var_ratio = pd.Series(data=pca.explained_variance_ratio_,
                         index=[f'PC {i+1}' for i in range(n_portfolios)])
@@ -101,12 +105,39 @@ plt.close()
 # ========================
 # ===== Fama-MacBeth =====
 # ========================
-fm_ports = portfolios.iloc[:, n_portfolios:]
-fm_ports = fm_ports.reindex(rets.dropna().index)
-bfm = BFMGLS(
-    assets=rets.dropna(),
-    factors=fm_ports,
-    n_draws=10_000,
-)
-bfm.plot_lambda(include_fm=True)
-print(bfm.ci_table_lambda())
+factors = portfolios.iloc[:, n_portfolios:]
+test_assets = portfolios.iloc[:, :n_portfolios]
+
+# ff5f = get_ff5f()
+# factors = pd.concat([factors, ff5f["Mkt-RF"]], axis=1)
+
+
+# Time series regression
+coeffs = []
+stders = []
+r2 = pd.Series(name="R2")
+df_resids = pd.DataFrame()
+
+for col in test_assets.columns:
+    reg_data = pd.concat([test_assets[col], factors], axis=1)
+    reg_data = reg_data.dropna()
+
+    model = sm.OLS(reg_data[col], sm.add_constant(reg_data[factors.columns]))
+    res = model.fit()
+
+    coeffs.append(res.params.rename(col))
+    stders.append(res.bse.rename(col))
+    r2.loc[col] = res.rsquared
+
+coeffs = pd.concat(coeffs, axis=1).T
+stders = pd.concat(stders, axis=1).T
+
+# Cross Section Regression
+betas = coeffs.iloc[:, 1:]
+means = test_assets.mean()
+
+model = sm.OLS(means, sm.add_constant(betas))
+res = model.fit()
+
+
+

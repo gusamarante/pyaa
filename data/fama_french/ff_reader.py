@@ -16,7 +16,7 @@ def get_ff5f():
     file_path = os.path.join(dir_path, "F-F_Research_Data_5_Factors_2x3.csv")
     ff5f = pd.read_csv(file_path,
                        skiprows=2,
-                       nrows=729,  # Update this when CSV is updated
+                       nrows=738,  # Update this when CSV is updated
                        index_col=0)
     ff5f.index = pd.to_datetime(ff5f.index, format="%Y%m")
     ff5f = ff5f.resample('M').last()

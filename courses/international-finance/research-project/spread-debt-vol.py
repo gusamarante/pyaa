@@ -170,14 +170,6 @@ params = {
 
 username = getpass.getuser()
 
-# Trackers and performance
-trackers = pd.read_excel(
-    f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
-    sheet_name='CDS Trackers',
-    index_col=0,
-)
-perf = Performance(trackers, skip_dd=True)
-
 
 # Spreads
 spreads = pd.read_excel(
@@ -207,13 +199,11 @@ ctd = ctd.rename({k: params[k]["Markit Name"] for k in params.keys()}, axis=1)
 
 avg_spr = spreads.mean()
 avg_ctd = ctd.mean()
-vol = perf.table.loc["Vol"]
 
 df2plot = pd.concat(
     [
         np.log(10_000 * avg_spr.rename("Average Spread (Log)")),
         np.log(100 * avg_ctd.rename("Average OI-to-Debt (Log)")),
-        100 * vol.rename("Volatility"),
         pd.Series({params[k]["Markit Name"]: params[k]["DMEM"] for k in params.keys()}, name="DM/EM"),
     ],
     axis=1,

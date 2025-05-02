@@ -5,15 +5,12 @@ from utils.performance import Performance
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from sklearn.decomposition import PCA
-from data import get_ff5f
-import statsmodels.api as sm
 
 
 n_portfolios = 5
 size = 5
 port_labels = [f"Port {i+1}" for i in range(n_portfolios)]
 username = getpass.getuser()
-
 
 trackers = pd.read_excel(
     f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/Data.xlsx',
@@ -70,7 +67,26 @@ loadings = pd.DataFrame(data=pca.components_.T,
                         index=portfolios.columns[:n_portfolios])
 
 print(var_ratio)
+print(var_ratio.cumsum())
 print(loadings)
+
+
+# =================
+# ===== CHART =====
+# =================
+fig = plt.figure(figsize=(size * (4 / 3), size))
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.plot(loadings.iloc[:, :2], label=loadings.iloc[:, :2].columns)
+ax.axhline(0, color="black", lw=0.5)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+# ax.set_title("PC Loadings of Spread-Ranked Portfolios")
+
+plt.tight_layout()
+plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/PCA ranked spread.pdf')
+plt.show()
+plt.close()
 
 
 # =================
@@ -100,44 +116,3 @@ plt.tight_layout()
 plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/trackers portfolios.pdf')
 plt.show()
 plt.close()
-
-
-# ========================
-# ===== Fama-MacBeth =====
-# ========================
-factors = portfolios.iloc[:, n_portfolios:]
-test_assets = portfolios.iloc[:, :n_portfolios]
-
-# ff5f = get_ff5f()
-# factors = pd.concat([factors, ff5f["Mkt-RF"]], axis=1)
-
-
-# Time series regression
-coeffs = []
-stders = []
-r2 = pd.Series(name="R2")
-df_resids = pd.DataFrame()
-
-for col in test_assets.columns:
-    reg_data = pd.concat([test_assets[col], factors], axis=1)
-    reg_data = reg_data.dropna()
-
-    model = sm.OLS(reg_data[col], sm.add_constant(reg_data[factors.columns]))
-    res = model.fit()
-
-    coeffs.append(res.params.rename(col))
-    stders.append(res.bse.rename(col))
-    r2.loc[col] = res.rsquared
-
-coeffs = pd.concat(coeffs, axis=1).T
-stders = pd.concat(stders, axis=1).T
-
-# Cross Section Regression
-betas = coeffs.iloc[:, 1:]
-means = test_assets.mean()
-
-model = sm.OLS(means, sm.add_constant(betas))
-res = model.fit()
-
-
-

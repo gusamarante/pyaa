@@ -52,6 +52,7 @@ port_trackers = 100 * port_trackers / port_trackers.iloc[0]
 # Performance
 perf = Performance(port_trackers, skip_dd=True)
 perf.table.to_clipboard()
+print(perf.table)
 
 # PCA
 pca = PCA(n_components=n_portfolios)
@@ -81,7 +82,6 @@ ax.axhline(0, color="black", lw=0.5)
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.legend(frameon=True, loc="upper left")
-# ax.set_title("PC Loadings of Spread-Ranked Portfolios")
 
 plt.tight_layout()
 plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/PCA ranked spread.pdf')
@@ -103,7 +103,7 @@ ax.set_title("Ranked Portfolios")
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 ax.tick_params(rotation=90, axis="x")
 
-ax = plt.subplot2grid((1, 2), (0, 1))
+ax = plt.subplot2grid((1, 2), (0, 1))  # TODO change to perf table
 ax.plot(port_trackers.iloc[:, n_portfolios:], label=port_trackers.columns[n_portfolios:])
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)

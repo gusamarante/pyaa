@@ -113,6 +113,6 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 ax.tick_params(rotation=90, axis="x")
 
 plt.tight_layout()
-plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/trackers portfolios.pdf')
+plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/trackers portfolios spread.pdf')
 plt.show()
 plt.close()

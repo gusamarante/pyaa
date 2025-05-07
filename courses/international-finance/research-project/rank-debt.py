@@ -266,7 +266,7 @@ plt.close()
 # =================
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
-ax = plt.subplot2grid((1, 2), (0, 0))
+ax = plt.subplot2grid((1, 1), (0, 0))
 ax.plot(port_trackers.iloc[:, :n_portfolios], label=port_trackers.columns[:n_portfolios])
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
@@ -275,14 +275,14 @@ ax.set_title("Ranked Portfolios")
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 ax.tick_params(rotation=90, axis="x")
 
-ax = plt.subplot2grid((1, 2), (0, 1))  # TODO change to perf table
-ax.plot(port_trackers.iloc[:, n_portfolios:], label=port_trackers.columns[n_portfolios:])
-ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.legend(frameon=True, loc="upper left")
-ax.set_title("Long-Short Portfolios")
-ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-ax.tick_params(rotation=90, axis="x")
+# ax = plt.subplot2grid((1, 2), (0, 1))  # TODO change to perf table
+# ax.plot(port_trackers.iloc[:, n_portfolios:], label=port_trackers.columns[n_portfolios:])
+# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.legend(frameon=True, loc="upper left")
+# ax.set_title("Long-Short Portfolios")
+# ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+# ax.tick_params(rotation=90, axis="x")
 
 plt.tight_layout()
 plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/trackers debt ranked portfolios.pdf')

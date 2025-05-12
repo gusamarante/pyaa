@@ -258,6 +258,8 @@ port_ds = data.pivot_table(
     aggfunc='mean',
 )
 
+# TODO add count chart
+
 # Trackers
 tracker_ds = 1 + port_ds
 new_idx = pd.date_range(
@@ -269,10 +271,10 @@ tracker_ds = tracker_ds.reindex(new_idx)
 tracker_ds.iloc[0] = 100
 tracker_ds = tracker_ds.cumprod()
 
+tracker_ds.columns = tracker_ds.columns.map("|".join).str.strip('|')
+
+perf = Performance(tracker_ds, skip_dd=True)
+print(perf.table.T)
+
 tracker_ds.plot()
 plt.show()
-
-
-
-
-a = 1

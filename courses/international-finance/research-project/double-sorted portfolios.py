@@ -4,7 +4,7 @@ import pandas as pd
 from utils.performance import Performance
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from sklearn.decomposition import PCA
+import seaborn as sns
 
 
 n_port_spread = 2
@@ -258,7 +258,12 @@ port_ds = data.pivot_table(
     aggfunc='mean',
 )
 
-# TODO add count chart
+count = data.pivot_table(
+    index='date',
+    values='returns',
+    columns=['port spread', 'port otd'],
+    aggfunc='count',
+)
 
 # Trackers
 tracker_ds = 1 + port_ds
@@ -273,8 +278,70 @@ tracker_ds = tracker_ds.cumprod()
 
 tracker_ds.columns = tracker_ds.columns.map("|".join).str.strip('|')
 
-perf = Performance(tracker_ds, skip_dd=True)
+perf = Performance(tracker_ds, skip_dd=True, freq="M")
 print(perf.table.T)
+perf.table.T.to_clipboard()
 
-tracker_ds.plot()
+
+# =======================
+# ===== CHART COUNT =====
+# =======================
+count.columns = count.columns.map("|".join).str.strip('|')
+count = count[count.index >= "2010-07-01"]
+count = count[count.index <= "2025-03-01"]
+
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.plot(count, label=count.columns)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+locators = mdates.YearLocator()
+ax.xaxis.set_major_locator(locators)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+
+plt.tight_layout()
+plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/Double Sorted Count.pdf')
 plt.show()
+plt.close()
+
+
+# ========================================
+# ===== CHART DOUBLE SORTED TRACKERS =====
+# ========================================
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.plot(tracker_ds, label=tracker_ds.columns)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(frameon=True, loc="upper left")
+locators = mdates.YearLocator()
+ax.xaxis.set_major_locator(locators)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax.tick_params(rotation=90, axis="x")
+
+plt.tight_layout()
+plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/Double Sorted Trackers.pdf')
+plt.show()
+plt.close()
+
+
+# =============================================
+# ===== CHART DOUBLE SORTED CORREL MATRIX =====
+# =============================================
+sns.clustermap(
+    data=tracker_ds.pct_change().corr(),
+    figsize=(size, size),
+    cmap='vlag',
+    linewidths=0,
+    vmin=-1,
+    vmax=1,
+    annot=True,
+)
+plt.tight_layout()
+plt.savefig(f'/Users/{username}/Dropbox/Aulas/Doutorado - International Finance/Research Project/figures/Double Sorted Correlation Matrix.pdf')
+plt.show()
+plt.close()

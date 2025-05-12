@@ -11,7 +11,7 @@ class Performance(object):
     # TODO Review
     # TODO Decompose returns seasonally by month/year
 
-    def __init__(self, total_return, rolling_window=252, skip_dd=False):
+    def __init__(self, total_return, rolling_window=252, skip_dd=False, freq="D"):
         """
         Computes performance measures for each column of 'total_return'
 
@@ -23,9 +23,20 @@ class Performance(object):
         rolling_window: int
             number of business day for the rolling measures
         """
+        # TODO better documentation
 
         assert isinstance(total_return, pd.DataFrame), \
             "'total_return' must be a pandas DataFrame, even if there is only one column"
+
+        self.freq = freq
+
+        # TODO better implementation
+        if self.freq == "D":
+            self.ret_factor = 252
+        elif self.freq == "M":
+            self.ret_factor = 12
+        else:
+            raise NotImplementedError("frequancy not implemented")
 
         self.total_return = total_return
         self.start_date = total_return.isna().astype(int).diff().idxmin().rename('Start Date')
@@ -228,11 +239,12 @@ class Performance(object):
     def _get_ann_returns(self):
 
         df_ret = pd.Series(name='Annualized Returns', dtype=float)
+
         for col in self.total_return.columns:
             aux = self.total_return[col].dropna()
             start, end = aux.iloc[0], aux.iloc[-1]
             n = len(aux) - 1
-            df_ret.loc[col] = (end / start) ** (252 / n) - 1
+            df_ret.loc[col] = (end / start) ** (self.ret_factor / n) - 1
 
         return df_ret
 
@@ -241,7 +253,7 @@ class Performance(object):
         df_std = pd.Series(name='Annualized Standard Deviation', dtype=float)
         for col in self.total_return.columns:
             aux = self.returns_ts[col].dropna()
-            df_std.loc[col] = aux.std() * np.sqrt(252)
+            df_std.loc[col] = aux.std() * np.sqrt(self.ret_factor)
 
         return df_std
 
@@ -250,7 +262,7 @@ class Performance(object):
         df_sor = pd.Series(name='Sortino', dtype=float)
         for col in self.total_return.columns:
             aux = self.returns_ts[col][self.returns_ts[col] < 0].dropna()
-            df_sor.loc[col] = self.returns_ann[col] / (np.sqrt(252) * aux.std())
+            df_sor.loc[col] = self.returns_ann[col] / (np.sqrt(self.ret_factor) * aux.std())
 
         return df_sor
 

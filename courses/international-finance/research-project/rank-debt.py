@@ -222,11 +222,11 @@ port_trackers = (1 + portfolios).cumprod()
 port_trackers = 100 * port_trackers / port_trackers.iloc[0]
 
 # Performance
-perf = Performance(port_trackers, skip_dd=True)
+perf = Performance(port_trackers, skip_dd=True, freq="M")
 perf.table.to_clipboard()
 print(perf.table)
 
-# # PCA
+# PCA
 pca = PCA(n_components=n_portfolios)
 pca_ports = portfolios.iloc[:, :n_portfolios]
 pca_ports = (pca_ports - pca_ports.mean()) / pca_ports.std()

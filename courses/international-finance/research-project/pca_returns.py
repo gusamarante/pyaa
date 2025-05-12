@@ -1,10 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from utils.performance import Performance
-from allocation import HRP
 from sklearn.decomposition import PCA
-import numpy as np
 from utils import BLUE
 import getpass
 

@@ -50,8 +50,8 @@ port_trackers = (1 + portfolios).cumprod()
 port_trackers = 100 * port_trackers / port_trackers.iloc[0]
 
 # Performance
-perf = Performance(port_trackers, skip_dd=True)
-perf.table.to_clipboard()
+perf = Performance(port_trackers, skip_dd=True, freq="M")
+perf.table.T.to_clipboard()
 print(perf.table)
 
 # PCA

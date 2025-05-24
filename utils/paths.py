@@ -2,7 +2,7 @@ from getpass import getuser
 from pathlib import Path
 
 # Lectures
-AA_LECTURE = Path(f"/Users/{getuser()}/Dropbox/Aulas/Insper - Asset Allocation/2025")
+AA_LECTURE = Path(f"/Users/{getuser()}/Dropbox/Lectures/MPE - Asset Allocation/2025")
 RF_LECTURE = Path(f"/Users/{getuser()}/Dropbox/Aulas/Insper - Renda Fixa/2025")  # Change the year when needed
 
 # Book Chapters
